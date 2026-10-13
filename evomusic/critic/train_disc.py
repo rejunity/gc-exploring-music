@@ -38,10 +38,18 @@ def real_windows(split: str, hop: int) -> list[Genome]:
 def load_pool(paths: list[Path]) -> list[Genome]:
     out = []
     for p in paths:
-        for line in p.open():
+        for i, line in enumerate(p.open()):
             r = json.loads(line)
-            out.append(Genome([tuple(x) for x in r["melody"]], r["chords"], r["bars"], {"pool": p.stem}))
+            run = r.get("run", i // 128)                 # v1 pools: 128 consecutive records per GA run
+            out.append(Genome([tuple(x) for x in r["melody"]], r["chords"], r["bars"], {"pool": p.stem, "run": f"{p.stem}:{run}"}))
     return out
+
+
+def split_by_run(pool: list[Genome]) -> tuple[list[Genome], list[Genome]]:
+    """Hold out whole runs (every 4th run id per file) so validation never sees near-duplicates of training fakes."""
+    runs = sorted({g.meta["run"] for g in pool})
+    held = {r for i, r in enumerate(runs) if i % 4 == 3}
+    return [g for g in pool if g.meta["run"] not in held], [g for g in pool if g.meta["run"] in held]
 
 
 # ---- synthetic negatives ------------------------------------------------------
@@ -123,6 +131,7 @@ def main(argv=None) -> dict:
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--out", type=Path, default=ROOT / "models/critic_disc.pt")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--real-per-epoch", type=int, default=0, help="subsample real windows per epoch (0 = all)")
     a = ap.parse_args(argv)
     rng = random.Random(a.seed); torch.manual_seed(a.seed)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -132,21 +141,23 @@ def main(argv=None) -> dict:
     ctx = model.cfg["ctx"]
     train_real, valid_real = real_windows("TRAIN", 4), real_windows("VALID", 8)
     pool = load_pool(a.pool)
-    rng.shuffle(pool)
-    n_pool_valid = len(pool) // 10
-    pool_valid, pool_train = pool[:n_pool_valid], pool[n_pool_valid:]
+    pool_train, pool_valid = split_by_run(pool)
     print(f"real train {len(train_real)} valid {len(valid_real)}; GA pool train {len(pool_train)} valid {len(pool_valid)}", flush=True)
 
     # fixed validation fakes per family
     vrng = random.Random(123)
     vfakes = {k: [make_fake(k, valid_real, vrng) for _ in range(400)] for k in FAMILIES}
     if pool_valid:
-        vfakes["ga_pool"] = pool_valid
+        vfakes["ga_heldout_runs"] = pool_valid
+        latest = max(g.meta["pool"] for g in pool_valid)
+        vfakes["ga_heldout_latest"] = [g for g in pool_valid if g.meta["pool"] == latest]
 
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.05)
     t0 = time.time()
     for ep in range(a.epochs):
         reals = list(train_real); rng.shuffle(reals)
+        if a.real_per_epoch:
+            reals = reals[:a.real_per_epoch]
         tot = n = 0
         for i in range(0, len(reals), a.bs // 2):
             rb = reals[i:i + a.bs // 2]

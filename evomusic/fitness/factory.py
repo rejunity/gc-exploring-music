@@ -12,7 +12,7 @@ from evomusic.fitness.rules import default_rules
 
 
 def build(rules: float = 1.0, ngram: Path | None = None, ngram_w: float = 0.5,
-          lm: Path | None = None, lm_w: float = 1.0, disc: Path | None = None, disc_w: float = 4.0) -> Composite:
+          lm: Path | None = None, lm_w: float = 1.0, disc: Path | list[Path] | None = None, disc_w: float = 4.0) -> Composite:
     f = Composite()
     if rules:
         r = default_rules()

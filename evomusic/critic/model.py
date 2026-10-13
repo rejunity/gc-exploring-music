@@ -78,13 +78,15 @@ def load(path: Path, device="cpu") -> tuple[Backbone, dict]:
 class Critic:
     """Batched Genome scorer. Exposes fitness terms with a `.batch` method for the GA."""
 
-    def __init__(self, lm_path: Path | None = None, disc_path: Path | None = None, device: str | None = None):
+    def __init__(self, lm_path: Path | None = None, disc_path: Path | list[Path] | None = None, device: str | None = None):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.lm, self.lm_meta = load(lm_path, self.device) if lm_path else (None, {})
-        self.disc, self.disc_meta = load(disc_path, self.device) if disc_path else (None, {})
+        paths = [] if disc_path is None else (disc_path if isinstance(disc_path, (list, tuple)) else [disc_path])
+        self.discs = [load(p, self.device)[0] for p in paths]
+        self.disc = self.discs[0] if self.discs else None
 
     @torch.no_grad()
-    def nll(self, gs: list[Genome], bs: int = 256) -> list[float]:
+    def nll(self, gs: list[Genome], bs: int = 128) -> list[float]:
         out = []
         for i in range(0, len(gs), bs):
             x = pad_batch([encode(g) for g in gs[i:i + bs]], self.lm.cfg["ctx"], self.device)
@@ -92,11 +94,13 @@ class Critic:
         return out
 
     @torch.no_grad()
-    def p_real(self, gs: list[Genome], bs: int = 256) -> list[float]:
+    def p_real(self, gs: list[Genome], bs: int = 128) -> list[float]:
+        """Ensemble score: geometric mean of members' p_real (any member rejecting pulls it down)."""
         out = []
         for i in range(0, len(gs), bs):
             x = pad_batch([encode(g) for g in gs[i:i + bs]], self.disc.cfg["ctx"], self.device)
-            out += torch.sigmoid(self.disc.forward_disc(x)).tolist()
+            logp = torch.stack([F.logsigmoid(d.forward_disc(x)) for d in self.discs]).mean(0)
+            out += logp.exp().tolist()
         return out
 
     # ---- fitness terms -----------------------------------------------------
