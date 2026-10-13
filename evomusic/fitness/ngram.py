@@ -8,9 +8,11 @@ Three streams:
   melody : token = (interval class from previous note | REST | START, duration)   n = 4
   chords : token = chord index                                                       n = 3
   chord_tone : token = (pitch class relative to current chord root, strong beat?) n = 1
-Fitness = mean per-token log-likelihood, mapped to [0, 1] by the corpus
-distribution (corpus median -> 0.5 ... corpus p95 -> 1, random -> ~0), so it
-is comparable with the rule terms.
+Fitness = mean per-token log-likelihood scored against the *band* of values
+real (held-out) music occupies: 1.0 inside [p10, p90], decaying linearly to 0
+one band-width outside on either side. Being *more* predictable than real
+music is penalised just like being less predictable, which stops the GA from
+converging on the single most probable cliché.
 """
 from __future__ import annotations
 
@@ -116,20 +118,29 @@ class CorpusModel:
         scale = {}
         for name, (fn, _) in STREAMS.items():
             lp = [models[name].logprob(fn(g)) for g in (calib or genomes)]
-            q = st.quantiles(lp, n=20)
-            scale[name] = (q[9], q[18])
+            q = st.quantiles(lp, n=10)
+            scale[name] = (q[0], q[8])          # p10, p90 of real music
         return cls(models, scale)
+
+    def band(self, name: str) -> tuple[float, float]:
+        return self.scale[name]
 
     def raw(self, g: Genome) -> dict[str, float]:
         return {name: self.models[name].logprob(fn(g)) for name, (fn, _) in STREAMS.items()}
 
     def term(self, name: str):
-        """A [0,1] fitness term for one stream: p50 -> 0.5, p95 -> 1.0, linear, clipped."""
+        """A [0,1] fitness term for one stream: 1 inside the real-music band [p10, p90],
+        linear decay to 0 one band-width outside on either side."""
         fn = STREAMS[name][0]
         lo, hi = self.scale[name]
+        width = hi - lo
         def f(g: Genome) -> float:
             x = self.models[name].logprob(fn(g))
-            return max(0.0, min(1.0, 0.5 + 0.5 * (x - lo) / (hi - lo)))
+            if x < lo:
+                return max(0.0, 1 - (lo - x) / width)
+            if x > hi:
+                return max(0.0, 1 - (x - hi) / width)
+            return 1.0
         f.__name__ = f"ngram_{name}"
         return f
 
@@ -151,7 +162,7 @@ def main(argv: list[str]) -> None:
         valid = [g for g in gs if g.meta.get("split") == "VALID"] or None
         m = CorpusModel.fit(train, valid)
         m.save(Path(argv[2]))
-        print(f"fitted on {len(train)} genomes, scale from {len(valid or [])} held-out; (p50, p95):",
+        print(f"fitted on {len(train)} genomes, band from {len(valid or [])} held-out; (p10, p90):",
               {k: tuple(round(x, 2) for x in v) for k, v in m.scale.items()})
     elif cmd == "score":
         m = CorpusModel.load(Path(argv[1]))
