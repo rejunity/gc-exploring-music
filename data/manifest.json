@@ -27,6 +27,58 @@
       "tree_sha256": "7dfa7c9a484b77e180238ac3f1c43eb7ee069a4ef83627c8342e0aee37ca2a3a",
       "size": 5603648
     },
+    "hooktheory": {
+      "url": "https://raw.githubusercontent.com/chrisdonahue/sheetsage-data/06113c04b109a2f27517b0399ff47550099f2466/hooktheory/Hooktheory.json.gz",
+      "filename": "Hooktheory.json.gz",
+      "extract": false,
+      "notes": "Sheet Sage release (Donahue et al. 2022): ~50 h of aligned melody + harmony annotations keyed by Hooktheory ID, with train/valid/test split and tags (filter on MELODY, exclude TEMPO_CHANGES). Found by Renaldas 2026-10-13.",
+      "tier": "core",
+      "style": "pop (Western, TheoryTab)",
+      "license": "CC BY-NC-SA 3.0 (derived from Hooktheory TheoryTab user contributions)",
+      "home": "https://github.com/chrisdonahue/sheetsage",
+      "sha256": "917b7cd58f5f4e07d6c36acf7bfad958c99ee05472dab3555399141094698e0c",
+      "tree_sha256": null,
+      "size": 20075896
+    },
+    "hooktheory_midi_train": {
+      "url": "https://raw.githubusercontent.com/chrisdonahue/sheetsage-data/06113c04b109a2f27517b0399ff47550099f2466/hooktheory/Hooktheory_Train_MIDI.tar.gz",
+      "filename": "Hooktheory_Train_MIDI.tar.gz",
+      "extract": true,
+      "notes": "MIDI renderings of the train split segments (see Hooktheory_Train_Segments.json in the same repo).",
+      "tier": "core",
+      "style": "pop (Western, TheoryTab)",
+      "license": "CC BY-NC-SA 3.0 (derived from Hooktheory TheoryTab user contributions)",
+      "home": "https://github.com/chrisdonahue/sheetsage",
+      "sha256": "a2345e13564c81740c087b79731b47e8323c4ceb7b85d40a1a11582af58145cb",
+      "tree_sha256": "b1e5cfcba19d0015430c40ecdafe4d01e5f00c9d1225f39856e686122ba5259b",
+      "size": 2700002
+    },
+    "hooktheory_midi_valid": {
+      "url": "https://raw.githubusercontent.com/chrisdonahue/sheetsage-data/06113c04b109a2f27517b0399ff47550099f2466/hooktheory/Hooktheory_Valid_MIDI.tar.gz",
+      "filename": "Hooktheory_Valid_MIDI.tar.gz",
+      "extract": true,
+      "notes": "MIDI renderings of the validation split.",
+      "tier": "core",
+      "style": "pop (Western, TheoryTab)",
+      "license": "CC BY-NC-SA 3.0 (derived from Hooktheory TheoryTab user contributions)",
+      "home": "https://github.com/chrisdonahue/sheetsage",
+      "sha256": "e369fd4a3072c7524e3cafe506bbdad6e908de969d0f1ba7abf08bf5148989fe",
+      "tree_sha256": "1e84a5cb40ad169e8d470a945787f47eebc43e62a076dda7df86ab4da699fd84",
+      "size": 266989
+    },
+    "hooktheory_midi_test": {
+      "url": "https://raw.githubusercontent.com/chrisdonahue/sheetsage-data/06113c04b109a2f27517b0399ff47550099f2466/hooktheory/Hooktheory_Test_MIDI.tar.gz",
+      "filename": "Hooktheory_Test_MIDI.tar.gz",
+      "extract": true,
+      "notes": "MIDI renderings of the test split.",
+      "tier": "core",
+      "style": "pop (Western, TheoryTab)",
+      "license": "CC BY-NC-SA 3.0 (derived from Hooktheory TheoryTab user contributions)",
+      "home": "https://github.com/chrisdonahue/sheetsage",
+      "sha256": "3baebe9d4e19a5006d0f24bc7f0c92a4f66039ab376be86bf7b37a136d4fb6c8",
+      "tree_sha256": "fd71992ff8e498d9c09ec91734669347a2deb93a331f171aaaaa157cffa85fb5",
+      "size": 296058
+    },
     "openewld": {
       "url": "https://github.com/00sapo/OpenEWLD/archive/ec03cbd809ca5296ee708591b970d0423dcbe31c.zip",
       "filename": "OpenEWLD-ec03cbd.zip",

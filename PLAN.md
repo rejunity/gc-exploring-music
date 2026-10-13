@@ -51,7 +51,8 @@ work in this project is *designing and validating fitness*, not the GA loop.
 | dataset | size | format | license / access | why |
 |---|---|---|---|---|
 | **POP909** | 909 pop songs (Chinese pop, piano arrangements) | MIDI with melody / bridge / piano tracks, chord + phrase labels, key | research use, github.com/music-x-lab/POP909-Dataset | melody + chord labels + phrase structure; first corpus |
-| **Hooktheory Lead Sheet Dataset (HLSD)** | 11,329 segments from TheoryTab, all 4/4 | JSON + MIDI, chords as symbols and Roman numerals | academic use only, github.com/wayne391/lead-sheet-dataset | Western pop hooks with functional harmony; ideal for chord n-grams |
+| **Hooktheory via Sheet Sage** (Donahue et al. 2022) | 26,175 TheoryTab segments, 23,833 with melody, ~50 h | gzipped JSON: per segment key (tonic + scale intervals), meter, melody `(onset, offset, octave, pitch_class)` in beats, harmony `(root, intervals, inversion)`; plus MIDI tarballs, 8:1:1 split | CC BY-NC-SA 3.0, github.com/chrisdonahue/sheetsage-data | **primary Western pop corpus**: melody + functional harmony, already key-normalisable |
+| Hooktheory Lead Sheet Dataset (HLSD, wayne391) | 11,329 segments | JSON + MIDI | academic use only; full dump link dead (2026-10-13) | superseded by the Sheet Sage release above; repo kept for its crawler |
 | **OpenEWLD / WikiMusicText** | ~1,000–2,000 lead sheets | MusicXML / ABC | public domain subset of Wikifonia (closed 2013) | pop/standards lead sheets |
 | **Lakh MIDI "clean_midi"** | ~17k files named by artist/title | multi-track MIDI | CC-BY 4.0 | real pop songs, but melody track must be extracted heuristically |
 
@@ -86,8 +87,8 @@ Large polyphonic MIDI corpora (critic pre-training, later):
 
 ### 3.4 Data plan
 
-1. Download POP909 and HLSD (pop), then Nottingham (ABC + MIDI; folk with
-   chords) into `data/raw/`. Essen comes via `music21.corpus`. All < 200 MB.
+1. `uv run python -m evomusic.data download` fetches every core corpus into
+   `data/raw/` with sha256 verification (done 2026-10-13; see README).
 2. Write `evomusic/corpus.py`: parse ABC / kern / MIDI into the canonical
    genome representation (section 5): melody + chord-per-half-bar. Normalise:
    transpose to C major / A minor, quantise to 16ths, reduce chords to a
@@ -288,7 +289,7 @@ Answered later the same day:
 
 8. **Ratings backend**: GitHub issues, prefilled from the static page (see 6.4). Revisit if raters without GitHub accounts appear.
 9. **GitHub repo**: public, https://github.com/rejunity/gc-exploring-music (GPL-3.0), GitHub Pages from `docs/` → https://rejunity.github.io/gc-exploring-music/. Raw POP909 / HLSD data stay out of the repo; only our generated mp3s are committed.
-10. **Critic target**: Western pop (HLSD) as the primary corpus; POP909 blended in with a lower weight (e.g. 70/30) for statistics and critic pre-training. Make the mix a config knob and A/B it in a listening test.
+10. **Critic target**: Western pop (Hooktheory via Sheet Sage) as the primary corpus; POP909 blended in with a lower weight (e.g. 70/30) for statistics and critic pre-training. Make the mix a config knob and A/B it in a listening test.
 
 Still open:
 
