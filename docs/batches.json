@@ -1,0 +1,75 @@
+{
+  "repo": "rejunity/gc-exploring-music",
+  "batches": [
+    {
+      "id": "001-rules-v1",
+      "title": "Rules-only fitness v1 vs random",
+      "notes": "First listening test. 'random' = generation 0 (uniform pitches and chords), 'scale' = random but C-major only, 'evolved' = 200 generations of the plain GA under the hand-written rules (no corpus, no critic).",
+      "date": "2026-10-13",
+      "clips": [
+        {
+          "id": "random-01",
+          "label": "random",
+          "mp3": "audio/001-rules-v1/random-01.mp3",
+          "mid": "audio/001-rules-v1/random-01.mid",
+          "source": "out/random/random_0.mid"
+        },
+        {
+          "id": "random-02",
+          "label": "random",
+          "mp3": "audio/001-rules-v1/random-02.mp3",
+          "mid": "audio/001-rules-v1/random-02.mid",
+          "source": "out/random/random_1.mid"
+        },
+        {
+          "id": "random-03",
+          "label": "random",
+          "mp3": "audio/001-rules-v1/random-03.mp3",
+          "mid": "audio/001-rules-v1/random-03.mid",
+          "source": "out/random/random_2.mid"
+        },
+        {
+          "id": "scale-01",
+          "label": "scale",
+          "mp3": "audio/001-rules-v1/scale-01.mp3",
+          "mid": "audio/001-rules-v1/scale-01.mid",
+          "source": "out/random/scale_0.mid"
+        },
+        {
+          "id": "scale-02",
+          "label": "scale",
+          "mp3": "audio/001-rules-v1/scale-02.mp3",
+          "mid": "audio/001-rules-v1/scale-02.mid",
+          "source": "out/random/scale_1.mid"
+        },
+        {
+          "id": "evolved-01",
+          "label": "evolved",
+          "mp3": "audio/001-rules-v1/evolved-01.mp3",
+          "mid": "audio/001-rules-v1/evolved-01.mid",
+          "source": "out/rules_s0/star_0.985.mid",
+          "fitness": 0.985,
+          "chords": "ii7 ii7 V7 Isus4 Isus4 I IV I vi7 ii7 ii7 V7 I ii V I"
+        },
+        {
+          "id": "evolved-02",
+          "label": "evolved",
+          "mp3": "audio/001-rules-v1/evolved-02.mp3",
+          "mid": "audio/001-rules-v1/evolved-02.mid",
+          "source": "out/rules_s1/star_1.000.mid",
+          "fitness": 1.0,
+          "chords": "V IV IV I vi IV I I V I ii V IV IV V I"
+        },
+        {
+          "id": "evolved-03",
+          "label": "evolved",
+          "mp3": "audio/001-rules-v1/evolved-03.mp3",
+          "mid": "audio/001-rules-v1/evolved-03.mid",
+          "source": "out/rules_s2/star_0.993.mid",
+          "fitness": 0.993,
+          "chords": "Vsus4 Vsus4 V I I IV V vi ii V iv iv I IV V I"
+        }
+      ]
+    }
+  ]
+}

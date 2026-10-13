@@ -1,0 +1,88 @@
+"""Publish a batch of .mid files to the GitHub Pages site under docs/.
+
+    uv run python -m evomusic.publish BATCH_ID --title "..." [--notes "..."] \
+        [--label random out/a.mid out/b.mid] [--label evolved out/run/star_*.mid]
+
+Each --label starts a group; the .mid paths that follow belong to it. Files are
+copied to docs/audio/<batch>/, rendered to mp3, and appended to docs/batches.json.
+If a file's directory has a summary.json (written by evomusic.evolve) its fitness
+and chord progression are attached to the clip.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+import sys
+from datetime import date
+from pathlib import Path
+
+from evomusic.render import midi_to_wav, wav_to_mp3
+
+ROOT = Path(__file__).resolve().parent.parent
+DOCS = ROOT / "docs"
+BATCHES = DOCS / "batches.json"
+
+
+def load() -> dict:
+    if BATCHES.exists():
+        return json.loads(BATCHES.read_text())
+    return {"repo": "rejunity/gc-exploring-music", "batches": []}
+
+
+def main(argv: list[str] | None = None) -> None:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    # split "--label name files..." groups by hand so argparse stays simple
+    groups: list[tuple[str, list[Path]]] = []
+    rest: list[str] = []
+    i = 0
+    while i < len(argv):
+        if argv[i] == "--label":
+            groups.append((argv[i + 1], [])); i += 2
+        elif groups and not argv[i].startswith("--"):
+            groups[-1][1].append(Path(argv[i])); i += 1
+        else:
+            rest.append(argv[i]); i += 1
+    ap = argparse.ArgumentParser()
+    ap.add_argument("batch")
+    ap.add_argument("--title", required=True)
+    ap.add_argument("--notes", default="")
+    ap.add_argument("--replace", action="store_true", help="overwrite a batch with the same id")
+    a = ap.parse_args(rest)
+    if not groups:
+        sys.exit("give at least one --label NAME file.mid ...")
+
+    data = load()
+    if any(b["id"] == a.batch for b in data["batches"]):
+        if not a.replace:
+            sys.exit(f"batch {a.batch} exists; use --replace")
+        data["batches"] = [b for b in data["batches"] if b["id"] != a.batch]
+        shutil.rmtree(DOCS / "audio" / a.batch, ignore_errors=True)
+
+    out = DOCS / "audio" / a.batch
+    out.mkdir(parents=True, exist_ok=True)
+    clips = []
+    for label, files in groups:
+        for src in files:
+            summary = src.parent / "summary.json"
+            info = {}
+            if summary.exists():
+                for s in json.loads(summary.read_text()).get("saved", []):
+                    if s["file"] == src.name:
+                        info = {"fitness": round(s["fitness"], 3), "chords": s["chords"]}
+            cid = f"{label}-{len([c for c in clips if c['label'] == label]) + 1:02d}"
+            mid = out / f"{cid}.mid"
+            shutil.copy(src, mid)
+            wav = midi_to_wav(mid)
+            mp3 = wav_to_mp3(wav); wav.unlink()
+            clips.append({"id": cid, "label": label, "mp3": f"audio/{a.batch}/{mp3.name}",
+                          "mid": f"audio/{a.batch}/{mid.name}", "source": str(src), **info})
+            print("published", cid, "<-", src)
+    data["batches"].append({"id": a.batch, "title": a.title, "notes": a.notes, "date": date.today().isoformat(),
+                            "clips": clips})
+    BATCHES.write_text(json.dumps(data, indent=2) + "\n")
+    print(f"{len(clips)} clips in batch {a.batch}; docs/batches.json updated")
+
+
+if __name__ == "__main__":
+    main()

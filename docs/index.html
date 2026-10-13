@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gc-exploring-music · evolved melodies</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>gc-exploring-music</h1>
+  <p class="sub">Melodies evolved by a genetic algorithm. Listen, then help the fitness function by rating pairs.</p>
+  <nav>
+    <button id="tab-listen" class="tab active">Listen</button>
+    <button id="tab-rate" class="tab">Rate A / B</button>
+    <a class="tab link" id="repo-link" href="#" target="_blank" rel="noopener">GitHub ↗</a>
+  </nav>
+</header>
+
+<main>
+  <section id="listen">
+    <div id="batches"></div>
+  </section>
+
+  <section id="rate" hidden>
+    <div class="card">
+      <p id="rate-intro">Pick a batch, listen to A and B, choose the one you like more. Labels are hidden until you answer.
+      Your answers stay in this browser until you submit them as a GitHub issue.</p>
+      <label>Batch <select id="rate-batch"></select></label>
+      <label>Your name <input id="rater" placeholder="e.g. giorgia" size="12"></label>
+      <button id="rate-start">Start</button>
+    </div>
+    <div id="pair" class="card" hidden>
+      <div class="pair-head"><span id="pair-count"></span><span id="pair-batch"></span></div>
+      <div class="ab">
+        <div class="side"><h3>A</h3><audio id="audio-a" controls preload="auto"></audio><div class="reveal" id="reveal-a"></div></div>
+        <div class="side"><h3>B</h3><audio id="audio-b" controls preload="auto"></audio><div class="reveal" id="reveal-b"></div></div>
+      </div>
+      <div class="choices">
+        <button data-choice="A">A is better</button>
+        <button data-choice="tie">Can't tell</button>
+        <button data-choice="B">B is better</button>
+      </div>
+      <button id="pair-next" hidden>Next pair →</button>
+    </div>
+    <div id="submit" class="card">
+      <p><b id="n-ratings">0</b> unsent ratings in this browser.</p>
+      <button id="submit-issue">Submit as GitHub issue</button>
+      <button id="download-json">Download JSON</button>
+      <button id="clear-ratings" class="danger">Clear</button>
+      <p class="hint">Submitting opens a prefilled issue on GitHub (you need a GitHub account). Press "Submit new issue" there. No account? Download the JSON and send it to Renaldas.</p>
+    </div>
+  </section>
+</main>
+<footer><p>Built from <code>docs/batches.json</code>. Clips are rendered with FluidSynth (FluidR3 GM soundfont) from the evolved MIDI files; the <code>.mid</code> links let you open them in a DAW.</p></footer>
+<script src="app.js"></script>
+</body>
+</html>
