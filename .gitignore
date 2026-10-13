@@ -18,3 +18,4 @@ out/
 
 # trained weights (reproducible from code + data manifest)
 models/
+logs/
