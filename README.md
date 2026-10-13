@@ -14,6 +14,33 @@ uv sync                      # creates .venv with the core deps
 uv run python -m evomusic.smoke   # writes out/smoke.mid (a random 8-bar melody)
 ```
 
+## Data
+
+All corpora are fetched by one script into `data/raw/` (git-ignored). The manifest
+`data/manifest.json` pins URLs to commit SHAs / revisions where possible and
+records a sha256 of every download plus a hash of the extracted file tree, so a
+second machine can check it has byte-identical data.
+
+```bash
+uv run python -m evomusic.data list                 # what is in the manifest, what is on disk
+uv run python -m evomusic.data download             # all "core" sets (~85 MB download, ~220 MB on disk)
+uv run python -m evomusic.data download --tier all  # + Lakh clean_midi (234 MB download, 1.1 GB on disk)
+uv run python -m evomusic.data verify               # re-hash disk vs manifest
+uv run python -m evomusic.data download --record    # refresh hashes after a deliberate upstream update
+```
+
+| name | contents | style | licence |
+|---|---|---|---|
+| pop909 | 909 songs, melody/bridge/piano MIDI + chord/beat/key txt | pop (Chinese) | MIT |
+| hlsd_sample | Hooktheory lead-sheet repo snapshot: crawler + ~40 sample MIDI/JSON (full dump link is dead) | pop (Western) | academic only |
+| openewld | 502 lead sheets, MusicXML with chords | pop / standards | public domain |
+| wikimusictext | 1,010 lead sheets in ABC with metadata | pop / standards | CC BY-NC 4.0 |
+| nottingham | ~1,200 folk tunes, ABC with chords | folk | free |
+| essen | 8,473 monophonic tunes, **kern | folk | unclear, see below |
+| bach_chorales | 370 four-part chorales, **kern | baroque | CC BY-NC-SA |
+| weimar_jazz_db, weimar_jazz_midi | 456 transcribed solos, SQLite + MIDI | jazz | ODbL |
+| lakh_clean_midi | 17,256 multi-track MIDI named by artist/title | pop/rock | CC BY 4.0 |
+
 ## Listening
 
 ```bash
