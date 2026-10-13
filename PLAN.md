@@ -1,6 +1,6 @@
 # PLAN — Evolutionary MIDI melody generation
 
-Status: draft v1, 2026-10-13. Source: Renaldas' "Evolutionary Music Generation
+Status: draft v2, 2026-10-13 (v1 questions answered by Renaldas, see section 11). Source: Renaldas' "Evolutionary Music Generation
 approach" doc (Palaiseau discussion) plus a survey of datasets and tools done today.
 
 ## 1. Goal
@@ -29,19 +29,33 @@ work in this project is *designing and validating fitness*, not the GA loop.
 
 ## 2. Scope decisions (proposed, please push back)
 
-- **Start monophonic.** One melody line, fixed key, 4/4, 8–16 bars. Harmony,
-  polyphony and expressive timing come later (section 9).
+- **Melody + chords from day one.** One melody line over a chord track
+  (block chords or a simple comping pattern), fixed key, 4/4, 8–16 bars.
+  Polyphonic counterpoint and expressive timing come later (section 9).
 - **Discrete genome.** A melody is a list of `(pitch | rest, duration)` genes on
-  a 16th-note grid. Simple, every mutation stays valid, trivially serialises to MIDI.
-- **Corpus = folk melodies first.** Clean, monophonic, metrically regular,
-  tens of thousands of tunes, public. Pop/jazz/classical corpora are added once
-  the pipeline works.
+  a 16th-note grid plus a chord chromosome, one chord per half-bar. Simple,
+  every mutation stays valid, trivially serialises to MIDI.
+- **Style order: pop → folk → baroque → jazz.** Pop first means the primary
+  corpora are POP909 and the Hooktheory Lead Sheet Dataset (both melody +
+  chords). Folk (Nottingham, Essen) is the clean fallback for calibrating rules.
+- **Quality-diversity archive, with a starred winner.** Each run produces a
+  MAP-Elites archive of diverse melodies; the single best-fitness individual is
+  exported with a `★` / `star` prefix in its filename.
 - **Code first, notebooks for exploration only.** Everything reusable lives in
   the `evomusic` package; notebooks import from it.
 
 ## 3. Datasets
 
-### 3.1 Monophonic melody corpora (primary, for rules calibration + critic training)
+### 3.1 Pop lead-sheet corpora (primary: melody + chords)
+
+| dataset | size | format | license / access | why |
+|---|---|---|---|---|
+| **POP909** | 909 pop songs (Chinese pop, piano arrangements) | MIDI with melody / bridge / piano tracks, chord + phrase labels, key | research use, github.com/music-x-lab/POP909-Dataset | melody + chord labels + phrase structure; first corpus |
+| **Hooktheory Lead Sheet Dataset (HLSD)** | 11,329 segments from TheoryTab, all 4/4 | JSON + MIDI, chords as symbols and Roman numerals | academic use only, github.com/wayne391/lead-sheet-dataset | Western pop hooks with functional harmony; ideal for chord n-grams |
+| **OpenEWLD / WikiMusicText** | ~1,000–2,000 lead sheets | MusicXML / ABC | public domain subset of Wikifonia (closed 2013) | pop/standards lead sheets |
+| **Lakh MIDI "clean_midi"** | ~17k files named by artist/title | multi-track MIDI | CC-BY 4.0 | real pop songs, but melody track must be extracted heuristically |
+
+### 3.2 Folk / monophonic corpora (second style; also used to calibrate rules)
 
 | dataset | size | format | license / access | why |
 |---|---|---|---|---|
@@ -49,11 +63,17 @@ work in this project is *designing and validating fitness*, not the GA loop.
 | **Nottingham Music Database** | ~1,200 British/American folk tunes | ABC (with chords), MIDI | free, maintained by Seymour Shlien at ifdo.ca | melody + chord symbols, ideal first corpus |
 | **Meertens Tune Collections (MTC)** via `MTCFeatures` | 8k+ Dutch/German melodies as feature sequences | Python package, Zenodo | open | ready-made features (intervals, metric weights, phrase ends) |
 | **Weimar Jazz Database** | 456 transcribed jazz solos | SQLite + MIDI export | free download, jazzomat.hfm-weimar.de | later: a "jazz" style target for the critic |
-| **OpenEWLD / WikiMusicText** | ~1,000–2,000 lead sheets | MusicXML / ABC | public domain subset of Wikifonia (Wikifonia itself closed in 2013) | melody + chords, pop/standards |
-| **POP909** | 909 pop songs | MIDI with melody / bridge / piano tracks, chord + phrase labels | research use | pop melody track with chords |
 | **MeloSol corpus** | ~780 solfege-style melodies | kern | open | small, very clean |
 
-### 3.2 Large polyphonic MIDI corpora (later, for a stronger critic or harmony)
+### 3.3 Baroque and jazz (third and fourth style), plus large corpora for a stronger critic
+
+| dataset | size | notes |
+|---|---|---|
+| Bach chorales (music21 corpus, `bach/bwv*`) | 371 chorales | baroque four-part harmony, soprano = melody |
+| KernScores classical (Haydn, Mozart, Beethoven quartets, Bach inventions) | thousands of movements | kern, open |
+| Weimar Jazz Database | 456 transcribed solos with chords | jazz target, free download |
+
+Large polyphonic MIDI corpora (critic pre-training, later):
 
 | dataset | size | notes |
 |---|---|---|
@@ -64,13 +84,15 @@ work in this project is *designing and validating fitness*, not the GA loop.
 | GigaMIDI (TISMIR 2025) | 1.4M files, all GM instruments | HF access gated to research use |
 | PDMX | 250k public-domain MusicXML scores | Zenodo |
 
-### 3.3 Data plan
+### 3.4 Data plan
 
-1. Download Nottingham (ABC + MIDI) and Essen (kern via KernScores, or just
-   `music21.corpus`) into `data/raw/`. Both are < 50 MB.
+1. Download POP909 and HLSD (pop), then Nottingham (ABC + MIDI; folk with
+   chords) into `data/raw/`. Essen comes via `music21.corpus`. All < 200 MB.
 2. Write `evomusic/corpus.py`: parse ABC / kern / MIDI into the canonical
-   genome representation (section 5). Normalise: transpose to C major / A minor,
-   quantise to 16ths, drop tunes with unusual metres for v1.
+   genome representation (section 5): melody + chord-per-half-bar. Normalise:
+   transpose to C major / A minor, quantise to 16ths, reduce chords to a
+   vocabulary of ~24 (diatonic triads + 7ths + a few borrowed), drop tunes with
+   unusual metres for v1.
 3. Produce `data/processed/*.parquet` with one row per tune plus per-tune
    descriptors (section 6.5). Commit a handful of tiny samples under
    `data/samples/` so tests run without downloads.
@@ -91,7 +113,7 @@ Environment already set up (commit 1): `uv` + `pyproject.toml`, Python 3.11.
 | `torch`, `miditok` | critic network, tokenisation | optional extra `critic` (GTX 1080, 8 GB: fine for a small transformer) |
 | `pyribs` | MAP-Elites / quality-diversity archive | add when we reach section 7.3 |
 | `nolds` | Lyapunov / entropy estimators on time series | add when we reach section 6.5 |
-| `fluidsynth` + `fluid-soundfont-gm` | render `.mid` to `.wav` to actually listen | `apt install fluidsynth fluid-soundfont-gm` (not yet run) |
+| `fluidsynth` + `fluid-soundfont-gm` + `ffmpeg` | render `.mid` → `.wav` → `.mp3` (`evomusic/render.py`); 8 bars ≈ 240 KB mp3 at 96 kbps | installed 2026-10-13 |
 | `lilypond` or MuseScore | render notation PNGs for the notebook | optional, `apt install lilypond` |
 
 Deliberately *not* used: DEAP (last release 2020), musicaiz (AGPL, stale).
@@ -101,11 +123,19 @@ musical rather than generic.
 ## 5. Genome and phenotype
 
 ```
-Genome   = list[Gene];  Gene = (pitch: int | None, dur: int)   # dur in 16ths
-Phenotype = MIDI file (+ optional chord track later)
+Genome    = (melody: list[Gene], chords: list[Chord])
+Gene      = (pitch: int | None, dur: int)      # dur in 16ths
+Chord     = index into a fixed vocabulary       # one per half-bar
+Phenotype = MIDI file, track 1 melody, track 2 chords (block or comping pattern)
 ```
 
-Invariants: durations sum to `bars * 16`; pitches within a configurable range.
+Invariants: durations sum to `bars * 16`; pitches within a configurable range;
+`len(chords) == bars * 2`.
+
+Chord mutations: substitute (diatonic neighbour, relative minor/major,
+secondary dominant), copy a bar's chord, re-harmonise a bar to fit its melody
+notes. Melody and chords can also be evolved in alternation (fix one, evolve
+the other) which keeps the search space manageable.
 Mutation operators (each with its own probability knob):
 
 - `pitch_shift` — move one note by ±1..±4 semitones (or ±1 scale degree);
@@ -130,10 +160,14 @@ on a few known-good tunes and a few known-bad ones.
 - range: penalise tessitura > 1.5 octaves;
 - rhythmic sanity: notes on strong beats, no pathological syncopation;
 - cadence: last note on tonic/dominant, phrase ends on long notes;
+- **melody–chord fit**: notes on strong beats are chord tones, non-chord tones
+  resolve by step; chord progression follows functional harmony (reward V→I,
+  ii→V, penalise retrogressions unless the corpus says pop does them);
 - repetition / self-similarity: at least one repeated bar, but not all bars equal.
 
 ### 6.2 Corpus statistics (`ngram.py`), after section 3.3
-- n-gram models (n = 2..5) over (interval, duration) pairs fitted on the corpus;
+- n-gram models (n = 2..5) over (interval, duration) pairs and over chord
+  transitions, fitted on the corpus (HLSD Roman numerals are perfect for this);
 - fitness = mean log-likelihood of the genome under the model, blended with a
   short-term model fitted on the genome itself. This is a cheap re-implementation
   of IDyOM's long-term + short-term "information content". IDyOM's surprise
@@ -153,8 +187,17 @@ Two options, in order of effort:
   per individual; then train a tiny reward model on genome descriptors so
   feedback generalises to unrated individuals.
 - Budget: ~50 comparisons per session should be enough to steer.
-- Interface: start with a CLI (`uv run evomusic rate`) that plays rendered
-  WAVs; a small web page later if Giorgia wants to rate remotely.
+- **Interface: a static web page on GitHub Pages** (`docs/` folder of this
+  repo, zero hosting cost). Each run uploads a batch of mp3s plus a
+  `pairs.json`; the page shows two players and "A is better / B is better /
+  can't tell". Ratings are POSTed to a Google Apps Script web app that appends
+  rows to a Google Sheet (free, no server, in Renaldas' Google account); the
+  page also offers "download my ratings as JSON" as a fallback. A
+  `uv run evomusic pull-ratings` command fetches the sheet as CSV and feeds the
+  Bradley-Terry fit. Keep batches to ~20 pairs so a session fits a coffee break.
+- Audio on the page is mp3 (96 kbps, ~30 KB per 8 bars... ~240 KB with sustain
+  tails); a batch of 40 clips is under 10 MB, fine for a git repo. If the repo
+  grows, move clips to GitHub Releases or git-lfs.
 
 ### 6.5 Complexity knobs (`complexity.py`)
 The doc proposes Kolmogorov–Sinai (KS) entropy and Lyapunov exponents. Both
@@ -180,10 +223,12 @@ These feed in two ways, matching the doc: as a **target** in fitness
    individual per generation as MIDI, log fitness terms to a CSV.
 2. **Diversity preservation**: fitness sharing or niching, plus "keep a few
    low-scorers" as the doc suggests.
-3. **MAP-Elites (quality-diversity)**: archive indexed by 2–3 behaviour
-   descriptors (e.g. note density × interval entropy × pitch range). Produces a
-   *map* of good melodies of different characters instead of one winner, which
-   is exactly what the "knobs" want. `pyribs` does this out of the box.
+3. **MAP-Elites (quality-diversity)**, agreed as the default: archive indexed
+   by 2–3 behaviour descriptors (e.g. note density × interval entropy × pitch
+   range). Produces a *map* of good melodies of different characters, which is
+   exactly what the "knobs" want. `pyribs` does this out of the box. Export:
+   every archive cell as `out/<run>/cell_<i>_<j>.mid`, and the global best as
+   `out/<run>/star_<fitness>.mid` (+ mp3).
 4. **Multi-objective** (pymoo NSGA-II) if weighting the fitness terms turns out
    to be a fight.
 
@@ -201,13 +246,14 @@ These feed in two ways, matching the doc: as a **target** in fitness
 | # | milestone | deliverable | est. |
 |---|---|---|---|
 | M0 | scaffold (done) | repo, uv env, random melody → `out/smoke.mid` | done 2026-10-13 |
-| M1 | data | Nottingham + Essen parsed to canonical genome, stats notebook | 1–2 days |
-| M2 | rules + GA | `evomusic evolve --fitness rules` produces listenable 8-bar tunes; fluidsynth rendering | 2–3 days |
+| M0b | render | `.mid` → mp3 via fluidsynth + ffmpeg (`evomusic/render.py`) | done 2026-10-13 |
+| M1 | data | POP909 + HLSD + Nottingham parsed to canonical melody+chord genome, stats notebook | 1–2 days |
+| M2 | rules + GA | `evomusic evolve --fitness rules` produces listenable 8-bar pop tunes with chords | 2–3 days |
 | M3 | corpus critic | n-gram fitness term; compare M2 vs M3 output in a listening test | 1–2 days |
 | M4 | learned critic | transformer LM critic, NLL fitness | 3–5 days |
-| M5 | human feedback | pairwise rating CLI, Bradley-Terry, reward model term | 2–3 days |
+| M5 | human feedback | GitHub Pages A/B rating page + Apps Script sheet, Bradley-Terry, reward model term | 2–3 days |
 | M6 | knobs | complexity measures as fitness targets + MAP-Elites archive | 3–4 days |
-| M7 | beyond monophony | chord track from Nottingham chords; two-voice counterpoint rules; expressive velocity | open |
+| M7 | more styles | folk, then baroque (Bach chorales, counterpoint rules), then jazz (Weimar DB); expressive velocity | open |
 
 ## 10. Repo layout
 
@@ -218,36 +264,34 @@ data/processed/      parquet (git-ignored)
 data/samples/        a few tiny tunes, committed, for tests
 notebooks/           exploration only
 out/                 generated MIDI/WAV (git-ignored)
-docs/                notes, listening-test logs
+docs/                GitHub Pages site (rating page) + notes, listening-test logs
 ```
 
-## 11. Open questions for Renaldas and Giorgia
+## 11. Decisions log
 
-1. **Style target.** Folk first because it is clean. Is there a style you
-   actually want to hear (baroque, pop hooks, jazz lines, film cues)? It
-   changes the corpus and the rules.
-2. **Monophonic for how long?** Is melody-only output satisfying for the first
-   few milestones, or do you want chords under it from day one (Nottingham has
-   chord symbols, so that is cheap)?
-3. **Who gives the human feedback and how?** Terminal A/B is fastest to build.
-   A web page lets Giorgia rate from a phone. Which?
-4. **Novelty vs. quality.** Would you rather have one great melody per run
-   (plain GA) or a map of diverse decent ones (MAP-Elites)? I lean MAP-Elites
-   because it makes the "knobs" first-class.
-5. **Complexity measures.** KS entropy and Lyapunov are interesting but
-   melodies are very short series. Fine to treat them as experiments and lean on
-   entropy rate / compression ratio for the real knob?
-6. **GPU budget.** The box has a GTX 1080 (8 GB). Enough for a small critic;
-   not for training on Aria-MIDI-scale data. OK to keep the critic small?
-7. **Data licensing.** Essen's legal status is "unclear" but it is used in
-   every paper. OK for a personal research project? (Nottingham is unambiguous.)
-8. **Playback.** May I `apt install fluidsynth fluid-soundfont-gm` on this
-   machine so runs can be rendered to WAV, or do you prefer listening to the
-   `.mid` files elsewhere (DAW, phone)?
+Answered by Renaldas on 2026-10-13:
+
+1. **Style**: pop first, then folk, baroque, jazz (may change).
+2. **Chords**: yes, chords underneath from the start.
+3. **Feedback UI**: small web page, hosted on GitHub Pages.
+4. **Output**: diversity archive, with the best melody marked with a star in its filename.
+5. **Complexity knob**: entropy rate + compression ratio are the real knob; KS entropy and Lyapunov are side experiments.
+6. **Audio tools**: fluidsynth, soundfont and ffmpeg installed; use mp3 for anything web-facing.
+7. **Essen licence**: acceptable; noted in README for future consideration.
+
+Still open:
+
+- **Ratings backend**: Google Apps Script + Sheet is the proposed free option
+  (needs a one-time setup in Renaldas' Google account). Alternatives: Supabase
+  free tier, or ratings submitted as GitHub issues. Which?
+- **GitHub repo**: public or private? (GitHub Pages on a private repo needs a
+  paid plan; a public repo must not contain POP909/HLSD data, only our mp3s.)
+- **POP909 is Chinese pop, HLSD is Western pop hooks.** Both are fine for
+  statistics; which sound is the target for the critic?
 
 ## 12. References found during the survey
 
-- Datasets: [Lakh MIDI](https://colinraffel.com/projects/lmd/), [Aria-MIDI](https://huggingface.co/datasets/loubb/aria-midi) ([paper](https://arxiv.org/abs/2504.15071)), [GigaMIDI](https://arxiv.org/abs/2502.17726v1), [POP909](https://arxiv.org/pdf/2008.07142), [KernScores / Essen](https://kernscores.stanford.edu/help/data), [MTCFeatures](https://pypi.org/project/MTCFeatures), [Weimar Jazz DB](https://jazzomat.hfm-weimar.de/), [OpenEWLD](https://projects.dharc.unibo.it/musow/view-1645596444-6679177), [WikiMusicText](https://huggingface.co/datasets/sander-wood/wikimusictext), [PDMX](https://github.com/speechprojects/PDMX), [MeloSol](https://www.osu.tests.sfulib4.publicknowledgeproject.org/index.php/EMR/article/view/7645)
+- Datasets: [POP909](https://github.com/music-x-lab/POP909-Dataset), [Hooktheory Lead Sheet Dataset](https://github.com/wayne391/lead-sheet-dataset), [Lakh MIDI](https://colinraffel.com/projects/lmd/), [Aria-MIDI](https://huggingface.co/datasets/loubb/aria-midi) ([paper](https://arxiv.org/abs/2504.15071)), [GigaMIDI](https://arxiv.org/abs/2502.17726v1), [POP909](https://arxiv.org/pdf/2008.07142), [KernScores / Essen](https://kernscores.stanford.edu/help/data), [MTCFeatures](https://pypi.org/project/MTCFeatures), [Weimar Jazz DB](https://jazzomat.hfm-weimar.de/), [OpenEWLD](https://projects.dharc.unibo.it/musow/view-1645596444-6679177), [WikiMusicText](https://huggingface.co/datasets/sander-wood/wikimusictext), [PDMX](https://github.com/speechprojects/PDMX), [MeloSol](https://www.osu.tests.sfulib4.publicknowledgeproject.org/index.php/EMR/article/view/7645)
 - Tools: [symusic](https://symusic.readthedocs.io/en/stable/introduction.html), [MidiTok](https://github.com/Natooz/MidiTok), [MusPy](https://pypi.org/project/muspy), [pymoo](https://arxiv.org/pdf/2002.04504), [LEAP](https://leap-gmu.readthedocs.io/en/stable/index.html)
 - Evolutionary music: [Mycka et al. 2023, rule-based harmonisation fitness](https://pages.mini.pw.edu.pl/~zychowskia/Publications/Harmonization_JOCS2023.pdf), [Ponce de León et al., data-based multi-objective melody generation](https://grfia.dlsi.ua.es/repositori/grfia/pubs/344/Data%20based%20melody%20generation%20through%20multi%20objective%20evolutionary%20computation%20(post-print).pdf), [Murray et al. 2012 on interactive fitness](https://axon.cs.byu.edu/Dan/papers/temp/murray2012mume.pdf), [HarmonyMapper, MAP-Elites for chords](https://ceur-ws.org/Vol-3626/paper2.pdf), [QD in sound generation](https://arxiv.org/pdf/2512.02783)
 - Expectation / complexity: [IDyOM overview](https://ppidyom.ccml.gtcmt.gatech.edu/articles/Overview.html), [computational features for symbolic melody analysis (2026)](https://arxiv.org/pdf/2608.19061), [KS entropy & Lyapunov intro](https://arxiv.org/pdf/nlin/0411023)
