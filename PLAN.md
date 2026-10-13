@@ -238,6 +238,26 @@ These feed in two ways, matching the doc: as a **target** in fitness
 4. **Multi-objective** (pymoo NSGA-II) if weighting the fitness terms turns out
    to be a fight.
 
+### 6.6 Calibration finding (2026-10-13)
+
+Scoring 3,000 real Hooktheory segments with the v1 rules gives mean 0.70
+(p10 0.59, p90 0.80) while the GA reaches 0.99 in 200 generations. The rules
+are a floor, not a target: they are easy to satisfy perfectly and real pop
+breaks them routinely. Corpus numbers to recalibrate against (p10 / p40 / p70):
+
+| descriptor | Hooktheory | v1 rule assumed |
+|---|---|---|
+| fraction of stepwise intervals | 0.32 / 0.55 / 0.69 | band 0.55–0.80 |
+| pitch range (semitones) | 9 / 17 / 23 | band 7–16 (fixed to 9–23) |
+| notes per bar | 2.5 / 4.1 / 5.7 | band 3–9 |
+| rest fraction | 0.00 / 0.10 / 0.22 | band 0.03–0.20 |
+| note durations (16ths) | 2: 48 %, 1: 20 %, 4: 17 % | 16ths were penalised as "off-beat" |
+| chord usage | I 20 %, vi 19 %, IV 15 %, V 13 % | — |
+| cadence rule satisfied | 0.36 | segments are excerpts; cadence must not dominate |
+
+Consequence: the corpus n-gram term (6.2) and the critic (6.3) are the real
+fitness; rules should move to soft bands derived from these percentiles.
+
 ## 8. Evaluation: how do we know it is working?
 
 - Fitness curves per term over generations (should rise, and not saturate
@@ -253,11 +273,11 @@ These feed in two ways, matching the doc: as a **target** in fitness
 |---|---|---|---|
 | M0 | scaffold (done) | repo, uv env, random melody → `out/smoke.mid` | done 2026-10-13 |
 | M0b | render | `.mid` → mp3 via fluidsynth + ffmpeg (`evomusic/render.py`) | done 2026-10-13 |
-| M1 | data | POP909 + HLSD + Nottingham parsed to canonical melody+chord genome, stats notebook | 1–2 days |
-| M2 | rules + GA | `evomusic evolve --fitness rules` produces listenable 8-bar pop tunes with chords | 2–3 days |
+| M1 | data | Hooktheory parsed to melody+chord genome (17,478 segments, `evomusic/corpus/hooktheory.py`); POP909 / Nottingham parsers still to do | Hooktheory done 2026-10-13 |
+| M2 | rules + GA | `evomusic.evolve` with 9 hand-written rules (`fitness/rules.py`) produces 8-bar tunes with chords; first batch on the site | v1 done 2026-10-13 |
 | M3 | corpus critic | n-gram fitness term; compare M2 vs M3 output in a listening test | 1–2 days |
 | M4 | learned critic | transformer LM critic, NLL fitness | 3–5 days |
-| M5 | human feedback | GitHub Pages A/B rating page + Apps Script sheet, Bradley-Terry, reward model term | 2–3 days |
+| M5 | human feedback | GitHub Pages site (`docs/`: listen + A/B rate, ratings as GitHub issues) done 2026-10-13; `pull-ratings` + Bradley-Terry + reward model term still to do | 1–2 days |
 | M6 | knobs | complexity measures as fitness targets + MAP-Elites archive | 3–4 days |
 | M7 | more styles | folk, then baroque (Bach chorales, counterpoint rules), then jazz (Weimar DB); expressive velocity | open |
 

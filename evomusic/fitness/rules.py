@@ -50,7 +50,7 @@ def interval_profile(g: Genome) -> float:
 
 def pitch_range(g: Genome) -> float:
     ps = g.pitches()
-    return _band(max(ps) - min(ps), 7, 16, 8) if ps else 0.0
+    return _band(max(ps) - min(ps), 9, 23, 8) if ps else 0.0   # Hooktheory p10..p70
 
 
 def rhythm(g: Genome) -> float:
