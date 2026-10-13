@@ -190,11 +190,16 @@ Two options, in order of effort:
 - **Interface: a static web page on GitHub Pages** (`docs/` folder of this
   repo, zero hosting cost). Each run uploads a batch of mp3s plus a
   `pairs.json`; the page shows two players and "A is better / B is better /
-  can't tell". Ratings are POSTed to a Google Apps Script web app that appends
-  rows to a Google Sheet (free, no server, in Renaldas' Google account); the
-  page also offers "download my ratings as JSON" as a fallback. A
-  `uv run evomusic pull-ratings` command fetches the sheet as CSV and feeds the
-  Bradley-Terry fit. Keep batches to ~20 pairs so a session fits a coffee break.
+  can't tell". **Ratings are submitted as GitHub issues** (decided
+  2026-10-13): a static page cannot call the GitHub API without a token, so the
+  page accumulates choices in `localStorage` and, at the end of a batch, opens
+  a prefilled `issues/new?title=ratings:<batch>&labels=ratings&body=<json>` URL;
+  the rater (needs a GitHub account) clicks "Submit new issue". Compact JSON
+  for 20 pairs is ~1 KB, well under the ~8 KB URL limit. A
+  `uv run evomusic pull-ratings` command runs `gh issue list --label ratings
+  --json body`, parses the JSON, and feeds the Bradley-Terry fit; processed
+  issues are closed. Fallback: "download my ratings as JSON". Keep batches to
+  ~20 pairs so a session fits a coffee break.
 - Audio on the page is mp3 at 96 kbps, about 240 KB per 8-bar clip with
   sustain tails; a batch of 40 clips is under 10 MB, fine for a git repo. If the repo
   grows, move clips to GitHub Releases or git-lfs.
@@ -279,15 +284,15 @@ Answered by Renaldas on 2026-10-13:
 6. **Audio tools**: fluidsynth, soundfont and ffmpeg installed; use mp3 for anything web-facing.
 7. **Essen licence**: acceptable; noted in README for future consideration.
 
+Answered later the same day:
+
+8. **Ratings backend**: GitHub issues, prefilled from the static page (see 6.4). Revisit if raters without GitHub accounts appear.
+9. **GitHub repo**: public, `exploring-music-with-giorgia`, GitHub Pages from `docs/`. Raw POP909 / HLSD data stay out of the repo; only our generated mp3s are committed.
+10. **Critic target**: Western pop (HLSD) as the primary corpus; POP909 blended in with a lower weight (e.g. 70/30) for statistics and critic pre-training. Make the mix a config knob and A/B it in a listening test.
+
 Still open:
 
-- **Ratings backend**: Google Apps Script + Sheet is the proposed free option
-  (needs a one-time setup in Renaldas' Google account). Alternatives: Supabase
-  free tier, or ratings submitted as GitHub issues. Which?
-- **GitHub repo**: public or private? (GitHub Pages on a private repo needs a
-  paid plan; a public repo must not contain POP909/HLSD data, only our mp3s.)
-- **POP909 is Chinese pop, HLSD is Western pop hooks.** Both are fine for
-  statistics; which sound is the target for the critic?
+- Does Giorgia have a GitHub account (needed to file rating issues)?
 
 ## 12. References found during the survey
 
