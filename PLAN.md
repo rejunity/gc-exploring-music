@@ -195,8 +195,8 @@ Two options, in order of effort:
   page also offers "download my ratings as JSON" as a fallback. A
   `uv run evomusic pull-ratings` command fetches the sheet as CSV and feeds the
   Bradley-Terry fit. Keep batches to ~20 pairs so a session fits a coffee break.
-- Audio on the page is mp3 (96 kbps, ~30 KB per 8 bars... ~240 KB with sustain
-  tails); a batch of 40 clips is under 10 MB, fine for a git repo. If the repo
+- Audio on the page is mp3 at 96 kbps, about 240 KB per 8-bar clip with
+  sustain tails; a batch of 40 clips is under 10 MB, fine for a git repo. If the repo
   grows, move clips to GitHub Releases or git-lfs.
 
 ### 6.5 Complexity knobs (`complexity.py`)
