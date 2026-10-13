@@ -149,7 +149,8 @@ def main(argv=None) -> dict:
     vfakes = {k: [make_fake(k, valid_real, vrng) for _ in range(400)] for k in FAMILIES}
     if pool_valid:
         vfakes["ga_heldout_runs"] = pool_valid
-        latest = max(g.meta["pool"] for g in pool_valid)
+        mtime = {pp.stem: pp.stat().st_mtime for pp in a.pool}
+        latest = max({g.meta["pool"] for g in pool_valid}, key=lambda k: mtime.get(k, 0))
         vfakes["ga_heldout_latest"] = [g for g in pool_valid if g.meta["pool"] == latest]
 
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.05)
