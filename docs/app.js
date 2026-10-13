@@ -43,7 +43,10 @@ function renderListen() {
       const el = document.createElement("div");
       el.className = "clip";
       const star = best && c.id === best.id ? `<span class="star" title="best fitness in batch">★</span> ` : "";
-      const info = [c.fitness != null ? `fitness ${c.fitness}` : null, c.chords ? `chords: ${c.chords}` : null].filter(Boolean).join(" · ");
+      const info = [c.fitness != null ? `fitness ${c.fitness}` : null,
+        c.p_real != null ? `critic "sounds real" ${c.p_real}` : null,
+        c.desc ? `density ${c.desc.density} notes/bar · melodic entropy ${c.desc.entropy} bits · range ${c.desc.range} st` : null,
+        c.chords ? `chords: ${c.chords}` : null].filter(Boolean).join(" · ");
       el.innerHTML = `<div class="title">${star}${c.id}<span class="label">${c.label}</span></div>
         <a href="${c.mid}" download>.mid</a>
         ${info ? `<div class="info">${info}</div>` : ""}

@@ -74,6 +74,12 @@ def main(argv: list[str] | None = None) -> None:
                 for s in json.loads(summary.read_text()).get("saved", []):
                     if s["file"] == src.name:
                         info = {"fitness": round(s["fitness"], 3), "chords": s["chords"]}
+                        if "descriptors" in s:
+                            d = s["descriptors"]
+                            info["desc"] = {"density": round(d["notes_per_bar"], 2), "entropy": round(d["symbol_entropy"], 2),
+                                            "range": d["pitch_range"], "compression": round(d["compression"], 2)}
+                        if "p_real" in s:
+                            info["p_real"] = round(s["p_real"], 3)
             if src.name in credits:
                 info["credit"] = credits[src.name]
             cid = f"{label}-{len([c for c in clips if c['label'] == label]) + 1:02d}"
