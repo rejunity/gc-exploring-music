@@ -1,4 +1,6 @@
-# exploring-music-with-giorgia
+# gc-exploring-music
+
+Repo: https://github.com/rejunity/gc-exploring-music (GPL-3.0, see LICENSE).
 
 Generative music via an evolutionary process. A population of random melodies is
 evolved toward "musical" results under a fitness score that combines music-theory

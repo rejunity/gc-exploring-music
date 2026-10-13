@@ -287,7 +287,7 @@ Answered by Renaldas on 2026-10-13:
 Answered later the same day:
 
 8. **Ratings backend**: GitHub issues, prefilled from the static page (see 6.4). Revisit if raters without GitHub accounts appear.
-9. **GitHub repo**: public, `exploring-music-with-giorgia`, GitHub Pages from `docs/`. Raw POP909 / HLSD data stay out of the repo; only our generated mp3s are committed.
+9. **GitHub repo**: public, https://github.com/rejunity/gc-exploring-music (GPL-3.0), GitHub Pages from `docs/` → https://rejunity.github.io/gc-exploring-music/. Raw POP909 / HLSD data stay out of the repo; only our generated mp3s are committed.
 10. **Critic target**: Western pop (HLSD) as the primary corpus; POP909 blended in with a lower weight (e.g. 70/30) for statistics and critic pre-training. Make the mix a config knob and A/B it in a listening test.
 
 Still open:
