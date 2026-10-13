@@ -65,7 +65,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("summaries", type=Path, nargs="+")
     ap.add_argument("--lm", type=Path, default=ROOT / "models/critic_lm.pt")
-    ap.add_argument("--disc", type=Path, help="the critic optimised against")
+    ap.add_argument("--disc", type=Path, nargs="*", help="the critic (ensemble) optimised against")
     ap.add_argument("--eval-disc", type=Path, help="independent critic for grading")
     ap.add_argument("--n-real", type=int, default=800)
     ap.add_argument("--json", type=Path)
@@ -85,6 +85,18 @@ def main() -> None:
         print(f"{r['metric']:24s} {r['real_p10']:9.3f} {r['real_p50']:8.3f} {r['real_p90']:8.3f} | {r['evolved_p50']:11.3f} {r['in_band']:8.0%}  {extra}")
     if a.json:
         a.json.write_text(json.dumps(rows, indent=1))
+    # write the independent grader's verdict back into each summary, for the site
+    if a.eval_disc:
+        pr = critics["eval"].p_real(ev)
+        by_src: dict[str, dict] = {}
+        for g, p in zip(ev, pr):
+            by_src.setdefault(g.meta["src"], {})[g.meta["file"]] = p
+        for src, m in by_src.items():
+            s = json.loads(Path(src).read_text())
+            for c in s["saved"]:
+                if c["file"] in m:
+                    c["p_real"] = m[c["file"]]
+            Path(src).write_text(json.dumps(s, indent=1, default=list))
 
 
 if __name__ == "__main__":
