@@ -1,0 +1,17 @@
+# python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.ipynb_checkpoints/
+
+# data and generated artefacts (keep tiny samples under data/samples/ only)
+data/raw/
+data/processed/
+out/
+*.sf2
+*.wav
+*.mp3
+
+# misc
+.DS_Store
