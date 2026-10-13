@@ -27,15 +27,15 @@ def _scale_step(p: int, k: int) -> int:
     return 12 * octave + pcs[idx % 7]
 
 
-def mutate(g: Genome, rng: random.Random, rate: float = 1.0, lo: int = 55, hi: int = 86) -> Genome:
+def mutate(g: Genome, rng: random.Random, rate: float = 1.0, lo: int = 45, hi: int = 88) -> Genome:
     """Apply ~rate random operators. Each op keeps the invariants."""
     bars = g.bar_genes()
     chords = list(g.chords)
     n_ops = max(1, round(rng.expovariate(1 / rate)))
     for _ in range(n_ops):
         op = rng.choices(["pitch", "degree", "transpose_bar", "split", "merge", "rest", "repeat_bar",
-                          "retrograde", "invert", "chord", "chord_copy", "cadence"],
-                         weights=[4, 4, 1, 2, 2, 1, 1.5, 0.5, 0.5, 3, 1, 0.5])[0]
+                          "retrograde", "invert", "chord", "chord_copy", "cadence", "octave"],
+                         weights=[4, 4, 1, 2, 2, 1, 1.5, 0.5, 0.5, 3, 1, 0.5, 0.5])[0]
         bi = rng.randrange(len(bars)); bar = bars[bi]
         gi = rng.randrange(len(bar)); p, d = bar[gi]
         if op == "pitch" and p is not None:
@@ -68,6 +68,11 @@ def mutate(g: Genome, rng: random.Random, rate: float = 1.0, lo: int = 55, hi: i
         elif op == "chord_copy":
             i = rng.randrange(len(chords)); j = rng.randrange(len(chords))
             chords[j] = chords[i]
+        elif op == "octave":                         # whole melody up/down an octave (register search)
+            k = rng.choice([-12, 12])
+            flat = [q for b in bars for q, _ in b if q is not None]
+            if flat and lo <= min(flat) + k and max(flat) + k <= hi:
+                bars = [[(None if q is None else q + k, e) for q, e in b] for b in bars]
         elif op == "cadence":
             chords[-2], chords[-1] = CHORDS.index(next(c for c in CHORDS if c.name == "V")), 0
     return Genome.from_bars(bars, chords)

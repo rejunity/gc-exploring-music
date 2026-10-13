@@ -261,6 +261,35 @@ breaks them routinely. Corpus numbers to recalibrate against (p10 / p40 / p70):
 Consequence: the corpus n-gram term (6.2) and the critic (6.3) are the real
 fitness; rules should move to soft bands derived from these percentiles.
 
+### 6.7 Critic as proxy for human evaluation (decided 2026-10-13)
+
+Renaldas: "Build the best possible critic, use it as a proxy for human
+evaluation and work without human intervention for now. Aim to create music
+that matches the complexity and critical evaluation on par with the
+professional music from the datasets."
+
+Implementation (`evomusic/critic/`):
+
+1. **Tokenizer**: REMI-style per bar `BAR, POS_p, CH_c, P_x|REST, D_d`; 8-bar
+   windows (the GA's phrase length) from Hooktheory, hop 2-4 bars.
+2. **Language model**: 6-layer GPT-style transformer, d=256, ~4.9 M params,
+   trained on 37.7k TRAIN windows. Fitness term = mean NLL scored against the
+   held-out p10..p90 band (as for the n-grams).
+3. **Discriminator**: same backbone initialised from the LM, real vs fake head
+   on the `<eos>` state. Fakes: GA mutation operators applied to real windows
+   at three strengths, pitch noise, bar shuffle, chord shuffle, melody/chord
+   swap between songs, random genomes, and GA output from adversarial rounds.
+4. **Adversarial rounds** (`critic/adversarial.py`): evolve against the
+   current critic, add the GA's top distinct individuals to the fake pool,
+   retrain, repeat. Logged per round: does the critic still accept real
+   music, and did retraining close the exploit the GA found?
+5. **Grading** (`evomusic/evaluate.py`): an *independent* discriminator (other
+   seed, never trained on the final archive) plus complexity descriptors.
+   "On par" = evolved medians inside the real p10..p90 band on every metric and
+   AUC(real vs evolved) close to 0.5 under the independent critic.
+6. **MAP-Elites** (`evomusic/mapelites.py`) over density x melodic entropy
+   produces the final archive; the global best is `star_*.mid`.
+
 ## 8. Evaluation: how do we know it is working?
 
 - Fitness curves per term over generations (should rise, and not saturate
@@ -279,9 +308,9 @@ fitness; rules should move to soft bands derived from these percentiles.
 | M1 | data | Hooktheory parsed to melody+chord genome (17,478 segments, `evomusic/corpus/hooktheory.py`); POP909 / Nottingham parsers still to do | Hooktheory done 2026-10-13 |
 | M2 | rules + GA | `evomusic.evolve` with 9 hand-written rules (`fitness/rules.py`) produces 8-bar tunes with chords; first batch on the site | v1 done 2026-10-13 |
 | M3 | corpus critic | `fitness/ngram.py`: interpolated n-grams over melody / chords / chord-tones, scaled by held-out percentiles; batch 002 on the site compares reference vs rules vs rules+corpus | v1 done 2026-10-13 |
-| M4 | learned critic | transformer LM critic, NLL fitness | 3–5 days |
+| M4 | learned critic | transformer LM + adversarial discriminator, independent grading critic (section 6.7) | in progress 2026-10-13 |
 | M5 | human feedback | GitHub Pages site (`docs/`: listen + A/B rate, ratings as GitHub issues) done 2026-10-13; `evomusic.ratings pull/rank` (GitHub issues → Bradley-Terry) done; reward-model term still to do | 1 day |
-| M6 | knobs | complexity measures as fitness targets + MAP-Elites archive | 3–4 days |
+| M6 | knobs | `complexity.py` (entropy rate, compression, Lyapunov) + MAP-Elites archive with starred best | code done 2026-10-13 |
 | M7 | more styles | folk, then baroque (Bach chorales, counterpoint rules), then jazz (Weimar DB); expressive velocity | open |
 
 ## 10. Repo layout

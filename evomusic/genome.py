@@ -16,7 +16,10 @@ STEP = PPQ // 4            # ticks per 16th
 STEPS_PER_BAR = 16
 CHORD_STEPS = 8            # one chord per half bar
 MAJOR = [0, 2, 4, 5, 7, 9, 11]
-DEFAULT_DURS = [1, 2, 2, 3, 4, 4, 6, 8]   # 16ths, weighted towards 8ths/quarters
+# Duration prior (16ths) from Hooktheory 8-bar windows: 8ths 47 %, 16ths 18 %, quarters 18 %, ...
+DUR_PRIOR = {1: 0.18, 2: 0.47, 3: 0.05, 4: 0.18, 6: 0.04, 8: 0.04, 12: 0.01, 16: 0.02}
+DEFAULT_DURS = list(DUR_PRIOR)
+MELODY_LO, MELODY_HI = 55, 79      # init register: corpus melody pitch p10..p90 is ~55..79 (median 67)
 
 
 @dataclass(frozen=True)
@@ -102,13 +105,13 @@ class Genome:
 
     # ---- construction -----------------------------------------------------
     @classmethod
-    def random(cls, bars: int = 8, lo: int = 60, hi: int = 84, rest_p: float = 0.08,
+    def random(cls, bars: int = 8, lo: int = MELODY_LO, hi: int = MELODY_HI, rest_p: float = 0.1,
                in_scale: bool = False, rng: random.Random | None = None) -> "Genome":
         """Fully random (default) or weakly constrained (in_scale=True) individual."""
         rng = rng or random.Random()
         total, t, genes = bars * STEPS_PER_BAR, 0, []
         while t < total:
-            d = min(rng.choice(DEFAULT_DURS), STEPS_PER_BAR - t % STEPS_PER_BAR)  # never cross a bar line
+            d = min(rng.choices(DEFAULT_DURS, weights=list(DUR_PRIOR.values()))[0], STEPS_PER_BAR - t % STEPS_PER_BAR)  # never cross a bar line
             if rng.random() < rest_p:
                 genes.append((None, d))
             else:

@@ -45,7 +45,7 @@ def interval_profile(g: Genome) -> float:
     # gap fill: a leap > 4 followed by a step in the opposite direction
     leaps = [(a, b) for a, b in zip(iv, iv[1:]) if abs(a) > 4]
     fill = sum((a > 0) != (b > 0) and abs(b) <= 2 for a, b in leaps) / len(leaps) if leaps else 0.5
-    return 0.5 * _band(steps, 0.55, 0.8, 0.4) + 0.3 * fill + 0.2 * (1 - min(1.0, 4 * big))
+    return 0.5 * _band(steps, 0.35, 0.85, 0.3) + 0.3 * fill + 0.2 * (1 - min(1.0, 4 * big))   # corpus p10..p90 ~0.32..0.84
 
 
 def pitch_range(g: Genome) -> float:
@@ -62,12 +62,13 @@ def rhythm(g: Genome) -> float:
     durs = Counter(d for _, p, d in on if p is not None)
     ent = -sum(c / n * math.log2(c / n) for c in durs.values())
     density = n / g.bars
-    return 0.4 * (1 - min(1.0, 3 * offbeat16 / n)) + 0.3 * _band(ent, 1.0, 2.2, 1.0) + 0.3 * _band(density, 3, 9, 4)
+    # corpus: ~16 % of onsets on 16th off-beats, 2.5..7.6 notes per bar (p10..p90)
+    return 0.4 * _band(offbeat16 / n, 0.0, 0.3, 0.3) + 0.3 * _band(ent, 1.0, 2.4, 1.0) + 0.3 * _band(density, 2.5, 8, 3)
 
 
 def rests(g: Genome) -> float:
     r = sum(d for p, d in g.melody if p is None) / g.n_steps
-    return _band(r, 0.03, 0.2, 0.3)
+    return _band(r, 0.0, 0.32, 0.3)    # corpus p90 ~0.34
 
 
 def cadence(g: Genome) -> float:
@@ -120,6 +121,6 @@ def default_rules() -> Composite:
             .add("range", 0.5, pitch_range)
             .add("rhythm", 1.0, rhythm)
             .add("rests", 0.5, rests)
-            .add("cadence", 1.0, cadence)
+            .add("cadence", 0.3, cadence)      # windows are excerpts; real music scores 0.36 here
             .add("repetition", 1.0, repetition)
             .add("harmony", 1.5, harmony))
