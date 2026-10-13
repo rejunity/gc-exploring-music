@@ -47,13 +47,12 @@ function renderListen() {
       el.innerHTML = `<div class="title">${star}${c.id}<span class="label">${c.label}</span></div>
         <a href="${c.mid}" download>.mid</a>
         ${info ? `<div class="info">${info}</div>` : ""}
-        <audio controls preload="none" src="${c.mp3}"></audio>`;
+        ${c.credit ? `<div class="info">${c.credit.url ? `<a href="${c.credit.url}" target="_blank" rel="noopener">${c.credit.text}</a>` : c.credit.text}</div>` : ""}
+        <midi-player sound-font src="${c.mid}"></midi-player>`;
       div.appendChild(el);
     });
     root.appendChild(div);
   });
-  // only one clip plays at a time
-  document.querySelectorAll("audio").forEach((a) => a.addEventListener("play", () => document.querySelectorAll("audio").forEach((o) => o !== a && o.pause())));
 }
 
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -75,7 +74,7 @@ function showPair() {
   const [a, b] = pairs[i].map((k) => batch.clips[k]);
   $("#pair-count").textContent = `pair ${i + 1} / ${pairs.length}`;
   $("#pair-batch").textContent = batch.id;
-  $("#audio-a").src = a.mp3; $("#audio-b").src = b.mp3;
+  $("#audio-a").src = a.mid; $("#audio-b").src = b.mid;
   $("#reveal-a").textContent = ""; $("#reveal-b").textContent = "";
   document.querySelectorAll(".choices button").forEach((x) => (x.disabled = false));
   $("#pair-next").hidden = true;

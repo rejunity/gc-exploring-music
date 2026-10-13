@@ -127,9 +127,16 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--in-scale", action="store_true", help="weakly constrained initial population")
     ap.add_argument("--out", type=Path, default=Path("out/run"))
     ap.add_argument("--top", type=int, default=5, help="how many distinct top individuals to save")
+    ap.add_argument("--corpus", type=Path, help="n-gram model json (evomusic.fitness.ngram fit); adds corpus terms")
+    ap.add_argument("--corpus-weight", type=float, default=3.0, help="weight of each corpus stream term")
     a = ap.parse_args(argv)
 
     fitness = default_rules()
+    if a.corpus:
+        from evomusic.fitness.ngram import STREAMS, CorpusModel
+        model = CorpusModel.load(a.corpus)
+        for name in STREAMS:
+            fitness.add(f"ngram_{name}", a.corpus_weight, model.term(name))
     pop, fit = evolve(fitness, a.pop, a.gens, a.bars, mut_rate=a.mut, seed=a.seed, in_scale=a.in_scale,
                       log=a.out / "log.csv")
     a.out.mkdir(parents=True, exist_ok=True)
@@ -146,7 +153,7 @@ def main(argv: list[str] | None = None) -> None:
                       "breakdown": fitness.breakdown(pop[i])})
         if len(saved) >= a.top:
             break
-    (a.out / "summary.json").write_text(json.dumps({"args": vars(a) | {"out": str(a.out)}, "saved": saved}, indent=2))
+    (a.out / "summary.json").write_text(json.dumps({"args": {k: str(v) if isinstance(v, Path) else v for k, v in vars(a).items()}, "saved": saved}, indent=2))
     print("best:", saved[0]["file"], saved[0]["chords"])
     print("breakdown:", {k: round(v, 2) for k, v in saved[0]["breakdown"].items()})
 

@@ -4,7 +4,8 @@
         [--label random out/a.mid out/b.mid] [--label evolved out/run/star_*.mid]
 
 Each --label starts a group; the .mid paths that follow belong to it. Files are
-copied to docs/audio/<batch>/, rendered to mp3, and appended to docs/batches.json.
+copied to docs/audio/<batch>/ and appended to docs/batches.json; the site plays
+the .mid files directly in the browser (html-midi-player), so no audio is rendered.
 If a file's directory has a summary.json (written by evomusic.evolve) its fitness
 and chord progression are attached to the clip.
 """
@@ -48,10 +49,13 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--title", required=True)
     ap.add_argument("--notes", default="")
     ap.add_argument("--replace", action="store_true", help="overwrite a batch with the same id")
+    ap.add_argument("--mp3", action="store_true", help="also render mp3 (local listening; not needed for the site)")
+    ap.add_argument("--credits", type=Path, help="json: {source filename: {text, url}} attached to clips as `credit`")
     a = ap.parse_args(rest)
     if not groups:
         sys.exit("give at least one --label NAME file.mid ...")
 
+    credits = json.loads(a.credits.read_text()) if a.credits else {}
     data = load()
     if any(b["id"] == a.batch for b in data["batches"]):
         if not a.replace:
@@ -70,13 +74,15 @@ def main(argv: list[str] | None = None) -> None:
                 for s in json.loads(summary.read_text()).get("saved", []):
                     if s["file"] == src.name:
                         info = {"fitness": round(s["fitness"], 3), "chords": s["chords"]}
+            if src.name in credits:
+                info["credit"] = credits[src.name]
             cid = f"{label}-{len([c for c in clips if c['label'] == label]) + 1:02d}"
             mid = out / f"{cid}.mid"
             shutil.copy(src, mid)
-            wav = midi_to_wav(mid)
-            mp3 = wav_to_mp3(wav); wav.unlink()
-            clips.append({"id": cid, "label": label, "mp3": f"audio/{a.batch}/{mp3.name}",
-                          "mid": f"audio/{a.batch}/{mid.name}", "source": str(src), **info})
+            if a.mp3:
+                wav = midi_to_wav(mid)
+                info["mp3"] = f"audio/{a.batch}/{wav_to_mp3(wav).name}"; wav.unlink()
+            clips.append({"id": cid, "label": label, "mid": f"audio/{a.batch}/{mid.name}", "source": str(src), **info})
             print("published", cid, "<-", src)
     data["batches"].append({"id": a.batch, "title": a.title, "notes": a.notes, "date": date.today().isoformat(),
                             "clips": clips})

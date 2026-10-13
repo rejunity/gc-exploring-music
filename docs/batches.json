@@ -10,42 +10,36 @@
         {
           "id": "random-01",
           "label": "random",
-          "mp3": "audio/001-rules-v1/random-01.mp3",
           "mid": "audio/001-rules-v1/random-01.mid",
           "source": "out/random/random_0.mid"
         },
         {
           "id": "random-02",
           "label": "random",
-          "mp3": "audio/001-rules-v1/random-02.mp3",
           "mid": "audio/001-rules-v1/random-02.mid",
           "source": "out/random/random_1.mid"
         },
         {
           "id": "random-03",
           "label": "random",
-          "mp3": "audio/001-rules-v1/random-03.mp3",
           "mid": "audio/001-rules-v1/random-03.mid",
           "source": "out/random/random_2.mid"
         },
         {
           "id": "scale-01",
           "label": "scale",
-          "mp3": "audio/001-rules-v1/scale-01.mp3",
           "mid": "audio/001-rules-v1/scale-01.mid",
           "source": "out/random/scale_0.mid"
         },
         {
           "id": "scale-02",
           "label": "scale",
-          "mp3": "audio/001-rules-v1/scale-02.mp3",
           "mid": "audio/001-rules-v1/scale-02.mid",
           "source": "out/random/scale_1.mid"
         },
         {
           "id": "evolved-01",
           "label": "evolved",
-          "mp3": "audio/001-rules-v1/evolved-01.mp3",
           "mid": "audio/001-rules-v1/evolved-01.mid",
           "source": "out/rules_s0/star_0.985.mid",
           "fitness": 0.985,
@@ -54,7 +48,6 @@
         {
           "id": "evolved-02",
           "label": "evolved",
-          "mp3": "audio/001-rules-v1/evolved-02.mp3",
           "mid": "audio/001-rules-v1/evolved-02.mid",
           "source": "out/rules_s1/star_1.000.mid",
           "fitness": 1.0,
@@ -63,11 +56,96 @@
         {
           "id": "evolved-03",
           "label": "evolved",
-          "mp3": "audio/001-rules-v1/evolved-03.mp3",
           "mid": "audio/001-rules-v1/evolved-03.mid",
           "source": "out/rules_s2/star_0.993.mid",
           "fitness": 0.993,
           "chords": "Vsus4 Vsus4 V I I IV V vi ii V iv iv I IV V I"
+        }
+      ]
+    },
+    {
+      "id": "002-reference-vs-evolved",
+      "title": "Real pop segments vs evolved (rules) vs evolved (rules + corpus n-grams)",
+      "notes": "Blind test material. 'reference' = real TheoryTab transcriptions from the held-out test split, rendered from the annotations exactly like the evolved clips (same piano, same C major, 120 bpm). 'rules' = GA under hand-written rules only. 'corpus' = GA under rules + Hooktheory n-gram likelihood terms (melody 4-gram, chord 3-gram, chord-tone unigram).",
+      "date": "2026-10-13",
+      "clips": [
+        {
+          "id": "reference-01",
+          "label": "reference",
+          "mid": "audio/002-reference-vs-evolved/reference-01.mid",
+          "source": "out/reference/ref_abba_mamma-mia.mid",
+          "credit": {
+            "text": "Abba \u2013 Mamma Mia (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/abba/mamma-mia"
+          }
+        },
+        {
+          "id": "reference-02",
+          "label": "reference",
+          "mid": "audio/002-reference-vs-evolved/reference-02.mid",
+          "source": "out/reference/ref_adele_make-you-feel-my-love.mid",
+          "credit": {
+            "text": "Adele \u2013 Make You Feel My Love (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/adele/make-you-feel-my-love"
+          }
+        },
+        {
+          "id": "reference-03",
+          "label": "reference",
+          "mid": "audio/002-reference-vs-evolved/reference-03.mid",
+          "source": "out/reference/ref_jerry-herman_time-heals-everything.mid",
+          "credit": {
+            "text": "Jerry Herman \u2013 Time Heals Everything (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/jerry-herman/time-heals-everything"
+          }
+        },
+        {
+          "id": "rules-01",
+          "label": "rules",
+          "mid": "audio/002-reference-vs-evolved/rules-01.mid",
+          "source": "out/rules_s0/star_0.985.mid",
+          "fitness": 0.985,
+          "chords": "ii7 ii7 V7 Isus4 Isus4 I IV I vi7 ii7 ii7 V7 I ii V I"
+        },
+        {
+          "id": "rules-02",
+          "label": "rules",
+          "mid": "audio/002-reference-vs-evolved/rules-02.mid",
+          "source": "out/rules_s1/star_1.000.mid",
+          "fitness": 1.0,
+          "chords": "V IV IV I vi IV I I V I ii V IV IV V I"
+        },
+        {
+          "id": "rules-03",
+          "label": "rules",
+          "mid": "audio/002-reference-vs-evolved/rules-03.mid",
+          "source": "out/rules_s2/star_0.993.mid",
+          "fitness": 0.993,
+          "chords": "Vsus4 Vsus4 V I I IV V vi ii V iv iv I IV V I"
+        },
+        {
+          "id": "corpus-01",
+          "label": "corpus",
+          "mid": "audio/002-reference-vs-evolved/corpus-01.mid",
+          "source": "out/corpus_s0/star_0.955.mid",
+          "fitness": 0.955,
+          "chords": "ii7 ii7 V7 V7 I I I V V vi vi IV IV V V I"
+        },
+        {
+          "id": "corpus-02",
+          "label": "corpus",
+          "mid": "audio/002-reference-vs-evolved/corpus-02.mid",
+          "source": "out/corpus_s1/star_0.985.mid",
+          "fitness": 0.985,
+          "chords": "I IV IV I I I I I I I I I I IV IV I"
+        },
+        {
+          "id": "corpus-03",
+          "label": "corpus",
+          "mid": "audio/002-reference-vs-evolved/corpus-03.mid",
+          "source": "out/corpus_s2/star_0.971.mid",
+          "fitness": 0.971,
+          "chords": "I I V V vi vi IV V V I I I I V V I"
         }
       ]
     }

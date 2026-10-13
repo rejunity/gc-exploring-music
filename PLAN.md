@@ -201,9 +201,12 @@ Two options, in order of effort:
   --json body`, parses the JSON, and feeds the Bradley-Terry fit; processed
   issues are closed. Fallback: "download my ratings as JSON". Keep batches to
   ~20 pairs so a session fits a coffee break.
-- Audio on the page is mp3 at 96 kbps, about 240 KB per 8-bar clip with
-  sustain tails; a batch of 40 clips is under 10 MB, fine for a git repo. If the repo
-  grows, move clips to GitHub Releases or git-lfs.
+- **Playback is from the `.mid` files directly in the browser** (decided
+  2026-10-13 to keep the repo small): `html-midi-player` (Magenta) from the
+  jsDelivr CDN, with Magenta's SGM Plus soundfont streamed from Google's CDN on
+  first play. A clip is ~400 bytes. The trade-off is an external dependency at
+  view time and a different piano than the local FluidSynth render; mp3 rendering
+  stays available locally via `publish --mp3` / `evomusic.render`.
 
 ### 6.5 Complexity knobs (`complexity.py`)
 The doc proposes Kolmogorov–Sinai (KS) entropy and Lyapunov exponents. Both
@@ -275,9 +278,9 @@ fitness; rules should move to soft bands derived from these percentiles.
 | M0b | render | `.mid` → mp3 via fluidsynth + ffmpeg (`evomusic/render.py`) | done 2026-10-13 |
 | M1 | data | Hooktheory parsed to melody+chord genome (17,478 segments, `evomusic/corpus/hooktheory.py`); POP909 / Nottingham parsers still to do | Hooktheory done 2026-10-13 |
 | M2 | rules + GA | `evomusic.evolve` with 9 hand-written rules (`fitness/rules.py`) produces 8-bar tunes with chords; first batch on the site | v1 done 2026-10-13 |
-| M3 | corpus critic | n-gram fitness term; compare M2 vs M3 output in a listening test | 1–2 days |
+| M3 | corpus critic | `fitness/ngram.py`: interpolated n-grams over melody / chords / chord-tones, scaled by held-out percentiles; batch 002 on the site compares reference vs rules vs rules+corpus | v1 done 2026-10-13 |
 | M4 | learned critic | transformer LM critic, NLL fitness | 3–5 days |
-| M5 | human feedback | GitHub Pages site (`docs/`: listen + A/B rate, ratings as GitHub issues) done 2026-10-13; `pull-ratings` + Bradley-Terry + reward model term still to do | 1–2 days |
+| M5 | human feedback | GitHub Pages site (`docs/`: listen + A/B rate, ratings as GitHub issues) done 2026-10-13; `evomusic.ratings pull/rank` (GitHub issues → Bradley-Terry) done; reward-model term still to do | 1 day |
 | M6 | knobs | complexity measures as fitness targets + MAP-Elites archive | 3–4 days |
 | M7 | more styles | folk, then baroque (Bach chorales, counterpoint rules), then jazz (Weimar DB); expressive velocity | open |
 
@@ -311,9 +314,16 @@ Answered later the same day:
 9. **GitHub repo**: public, https://github.com/rejunity/gc-exploring-music (GPL-3.0), GitHub Pages from `docs/` → https://rejunity.github.io/gc-exploring-music/. Raw POP909 / HLSD data stay out of the repo; only our generated mp3s are committed.
 10. **Critic target**: Western pop (Hooktheory via Sheet Sage) as the primary corpus; POP909 blended in with a lower weight (e.g. 70/30) for statistics and critic pre-training. Make the mix a config knob and A/B it in a listening test.
 
-Still open:
+11. **Reference clips**: real Hooktheory segments may be published on the site with attribution (CC BY-NC-SA).
+12. **Giorgia** has a GitHub account; Renaldas adds her once the site is polished.
 
-- Does Giorgia have a GitHub account (needed to file rating issues)?
+Observations after the first corpus-guided runs (2026-10-13): the GA saturates
+every n-gram term too (1.0 on melody / chord-tone) while real test segments sit
+at ~0.5, because the terms reward *the most probable* continuation, not a
+*plausible* one. Candidates to fix this: score against the corpus percentile
+band (penalise being more predictable than p90 as well as less than p10), add a
+diversity / novelty term, or move to the critic (6.3). The blind A/B results on
+batch 002 will tell us whether listeners agree.
 
 ## 12. References found during the survey
 

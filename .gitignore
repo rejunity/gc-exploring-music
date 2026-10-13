@@ -12,8 +12,6 @@ out/
 *.sf2
 *.wav
 *.mp3
-# ...except the clips published on the GitHub Pages site
-!docs/audio/**/*.mp3
 
 # misc
 .DS_Store
