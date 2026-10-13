@@ -15,3 +15,6 @@ out/
 
 # misc
 .DS_Store
+
+# trained weights (reproducible from code + data manifest)
+models/

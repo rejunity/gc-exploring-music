@@ -1,0 +1,121 @@
+"""Small GPT-style backbone with a language-model head and a real/fake head.
+
+`Critic` wraps a trained model for batched scoring of Genomes inside the GA.
+"""
+from __future__ import annotations
+
+import math
+from pathlib import Path
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from evomusic.critic.tokens import EOS, PAD, VOCAB, encode
+from evomusic.genome import Genome
+
+
+class Backbone(nn.Module):
+    def __init__(self, vocab: int = len(VOCAB), d: int = 256, layers: int = 6, heads: int = 8, ctx: int = 512, drop: float = 0.1):
+        super().__init__()
+        self.cfg = dict(vocab=vocab, d=d, layers=layers, heads=heads, ctx=ctx, drop=drop)
+        self.tok = nn.Embedding(vocab, d)
+        self.pos = nn.Embedding(ctx, d)
+        layer = nn.TransformerEncoderLayer(d, heads, 4 * d, drop, batch_first=True, norm_first=True, activation="gelu")
+        self.enc = nn.TransformerEncoder(layer, layers, enable_nested_tensor=False)
+        self.norm = nn.LayerNorm(d)
+        self.lm = nn.Linear(d, vocab, bias=False)
+        self.lm.weight = self.tok.weight
+        self.disc = nn.Sequential(nn.Linear(d, d), nn.GELU(), nn.Dropout(drop), nn.Linear(d, 1))
+
+    def hidden(self, x: torch.Tensor) -> torch.Tensor:
+        T = x.shape[1]
+        h = self.tok(x) + self.pos(torch.arange(T, device=x.device))
+        mask = nn.Transformer.generate_square_subsequent_mask(T, device=x.device)
+        h = self.enc(h, mask=mask, is_causal=True, src_key_padding_mask=(x == PAD))
+        return self.norm(h)
+
+    def forward_lm(self, x: torch.Tensor) -> torch.Tensor:
+        return self.lm(self.hidden(x))
+
+    def forward_disc(self, x: torch.Tensor) -> torch.Tensor:
+        h = self.hidden(x)
+        last = (x != PAD).sum(1) - 1                      # index of <eos>: sees the whole piece (causal)
+        return self.disc(h[torch.arange(len(x)), last]).squeeze(-1)
+
+
+def pad_batch(seqs: list[list[int]], ctx: int, device) -> torch.Tensor:
+    seqs = [s[:ctx - 1] + [EOS] if len(s) > ctx else s for s in seqs]
+    T = max(map(len, seqs))
+    x = torch.full((len(seqs), T), PAD, dtype=torch.long)
+    for i, s in enumerate(seqs):
+        x[i, :len(s)] = torch.tensor(s)
+    return x.to(device)
+
+
+def lm_nll(model: Backbone, x: torch.Tensor) -> torch.Tensor:
+    """Mean next-token NLL per sequence."""
+    logits = model.forward_lm(x[:, :-1])
+    tgt = x[:, 1:]
+    nll = F.cross_entropy(logits.transpose(1, 2), tgt, reduction="none", ignore_index=PAD)
+    n = (tgt != PAD).sum(1).clamp(min=1)
+    return nll.sum(1) / n
+
+
+def save(model: Backbone, path: Path, **extra) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save({"cfg": model.cfg, "state": model.state_dict(), **extra}, path)
+
+
+def load(path: Path, device="cpu") -> tuple[Backbone, dict]:
+    ck = torch.load(path, map_location=device, weights_only=False)
+    m = Backbone(**ck["cfg"]).to(device)
+    m.load_state_dict(ck["state"])
+    m.eval()
+    return m, ck
+
+
+class Critic:
+    """Batched Genome scorer. Exposes fitness terms with a `.batch` method for the GA."""
+
+    def __init__(self, lm_path: Path | None = None, disc_path: Path | None = None, device: str | None = None):
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.lm, self.lm_meta = load(lm_path, self.device) if lm_path else (None, {})
+        self.disc, self.disc_meta = load(disc_path, self.device) if disc_path else (None, {})
+
+    @torch.no_grad()
+    def nll(self, gs: list[Genome], bs: int = 256) -> list[float]:
+        out = []
+        for i in range(0, len(gs), bs):
+            x = pad_batch([encode(g) for g in gs[i:i + bs]], self.lm.cfg["ctx"], self.device)
+            out += lm_nll(self.lm, x).tolist()
+        return out
+
+    @torch.no_grad()
+    def p_real(self, gs: list[Genome], bs: int = 256) -> list[float]:
+        out = []
+        for i in range(0, len(gs), bs):
+            x = pad_batch([encode(g) for g in gs[i:i + bs]], self.disc.cfg["ctx"], self.device)
+            out += torch.sigmoid(self.disc.forward_disc(x)).tolist()
+        return out
+
+    # ---- fitness terms -----------------------------------------------------
+    def lm_term(self):
+        lo, hi = self.lm_meta["band"]                      # p10, p90 of held-out real NLL
+        w = hi - lo
+        def score(x: float) -> float:
+            if x < lo:
+                return max(0.0, 1 - (lo - x) / w)
+            if x > hi:
+                return max(0.0, 1 - (x - hi) / w)
+            return 1.0
+        f = lambda g: score(self.nll([g])[0])
+        f.batch = lambda gs: [score(x) for x in self.nll(gs)]
+        f.__name__ = "critic_lm"
+        return f
+
+    def disc_term(self):
+        f = lambda g: self.p_real([g])[0]
+        f.batch = self.p_real
+        f.__name__ = "critic_disc"
+        return f

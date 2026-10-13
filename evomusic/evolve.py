@@ -91,7 +91,7 @@ def evolve(fitness: Composite, pop_size: int = 300, gens: int = 300, bars: int =
            in_scale: bool = False, log: Path | None = None, verbose: bool = True) -> tuple[list[Genome], list[float]]:
     rng = random.Random(seed)
     pop = [Genome.random(bars=bars, in_scale=in_scale, rng=rng) for _ in range(pop_size)]
-    fit = [fitness(g) for g in pop]
+    fit = fitness.score_all(pop)
     rows = []
     n_elite = max(1, int(elite * pop_size))
     t0 = time.time()
@@ -105,7 +105,7 @@ def evolve(fitness: Composite, pop_size: int = 300, gens: int = 300, bars: int =
             child = crossover(pick(), pick(), rng) if rng.random() < p_cross else pick().copy()
             new.append(mutate(child, rng, mut_rate))
         pop = new
-        fit = [fitness(g) for g in pop]
+        fit = fitness.score_all(pop)
         best = max(fit)
         rows.append({"gen": gen, "best": best, "mean": sum(fit) / pop_size, "t": time.time() - t0})
         if verbose and (gen % 20 == 0 or gen == gens - 1):

@@ -1,0 +1,6 @@
+/home/rz/exploring-music-with-giorgia/.venv/lib/python3.11/site-packages/torch/nn/modules/transformer.py:433: UserWarning: Support for mismatched src_key_padding_mask and mask is deprecated. Use same type for both instead.
+  src_key_padding_mask = F._canonical_mask(
+[W1013 23:02:08.826494626 CUDACachingAllocator.cpp:3934] memory allocation failed with OOM on device 0 while trying to allocate 601882624 bytes (free: 268959744, total: 8500477952).
+windows train 37739 valid 2532 test 3038; tokens/window p50 143 max 410
+params 4.93 M on cuda
+epoch  0  train 13.472  valid 1.918  112s

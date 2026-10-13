@@ -15,8 +15,16 @@ class Composite:
         return self
 
     def breakdown(self, g: Genome) -> dict[str, float]:
-        return {n: fn(g) for n, (_, fn) in self.terms.items()}
+        return {n: v[0] for n, v in self.term_values([g]).items()}
 
     def __call__(self, g: Genome) -> float:
+        return self.score_all([g])[0]
+
+    def term_values(self, gs: list[Genome]) -> dict[str, list[float]]:
+        """Per-term values for a population; terms with a `.batch` attribute are scored in one call."""
+        return {n: (fn.batch(gs) if hasattr(fn, "batch") else [fn(g) for g in gs]) for n, (_, fn) in self.terms.items()}
+
+    def score_all(self, gs: list[Genome]) -> list[float]:
+        vals = self.term_values(gs)
         total = sum(w for w, _ in self.terms.values())
-        return sum(w * fn(g) for w, fn in self.terms.values()) / total
+        return [sum(w * vals[n][i] for n, (w, _) in self.terms.items()) / total for i in range(len(gs))]
