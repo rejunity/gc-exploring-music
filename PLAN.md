@@ -441,6 +441,63 @@ commits nothing. Limit observed: one burst reaches targets near the current stat
 only (predictability 40 from batch 005 stalled at ~22); far targets need Evolve
 with knob targets in the fitness (next).
 
+### 6.12 The repetition problem (2026-10-14, evening)
+
+Diagnosis by injection: real held-out phrases, modified, scored by every judge
+(`evomusic/critic/audit.py`; this table is now the validation step for every
+critic or fitness change):
+
+| real phrases, modified | exact repeats | LM term | discriminators | AMT term | combined (sum) |
+|---|---|---|---|---|---|
+| repeats removed | 0 % | 0.79 | 0.68 | 0.78 | 0.74 |
+| unchanged | 13 % | 0.74 | 0.80 | 0.78 | 0.77 |
+| bars 5-8 copy bars 1-4 | 44 % | 0.35 | 0.83 | 0.28 | 0.60 |
+| 2-bar loop x4 | 69 % | 0.07 | 0.83 | 0.01 | 0.47 |
+
+1. The likelihood judges (LM, AMT, n-grams) punish extreme repetition; the
+   combined fitness does not reward loops. Evolution climbs toward *as much
+   repetition as the likelihood bands tolerate*.
+2. Inside the tolerated band the likelihood terms were flat (1.0 anywhere in
+   p25..p75), so the only within-band gradient came from the discriminators,
+   whose preference is monotone "repeat more": every fake they had seen had
+   less repetition than real music, so "repeats, therefore real" was a reliable
+   shortcut. The independent grader 2 shared it, which weakens the batch-006 AUC.
+3. My form-likelihood term (6.11) made it worse: per-bar independent P(op |
+   position) rates "bars 5-8 copy bars 1-4" as perfectly typical and gives the
+   most common real plan (eight new bars) a score of 0; it penalised 15 % of
+   real pop. Removed.
+4. In the form genome a repeat costs one plan entry while a good new bar had to
+   be found note by note, so selection favoured repeats regardless of judges.
+
+Fixes (all in `main`):
+- **Judge audit** (`critic/audit.py`): 12 corruptions x every term, FAIL if a
+  judge rewards extra repetition or the combination fails to catch a corruption;
+  also checks that natural repetition in real music is not penalised.
+- **Peaked bands** (`fitness.band_peak`): 1 at the real median, 0.85 at p25/p75,
+  0 at p5/p95, for LM, AMT, n-gram and descriptor terms. A preference for
+  typical values inside the band, still no reward for the most predictable option.
+- **Geometric-mean aggregation** (`Composite(agg="geo")`): a soft AND; no single
+  biased judge can carry a piece.
+- **Over-repetition fakes** (period copy, loops, duplicated bars, sequence spam)
+  and a **form-genome adversarial pool** for the discriminators; retrain r10 and a
+  fresh grader 3; audit before use.
+- **10-D archive** (+ rhythm-repeat share: "one trick repeated with variation"),
+  **centroid pull** within cells (`--centre-w`), **star** chosen from typical regions.
+- **Corpus-sampled motifs** (`form.new_motif`, `s_fresh` mutation): a plausible new
+  bar is as cheap as a repeat.
+
+CPU check (corpus fitness, 60 iterations), published-pick profile vs real pop:
+
+| share of bars | real | before | after |
+|---|---|---|---|
+| new material | 57 % | 50 % | 55 % |
+| exact repeat | 15 % | 22 % | 17 % |
+| sequence | 3 % | 12 % | 4 % |
+| rhythm already heard | 29 % | 46 % | 33 % |
+
+GPU pipeline queued: critic v2 + audits (`scripts_critic_v2.sh`), then the
+form genome against the new ensemble (`scripts_final_v7.sh`) -> batch 007.
+
 ## 8. Evaluation: how do we know it is working?
 
 - Fitness curves per term over generations (should rise, and not saturate
