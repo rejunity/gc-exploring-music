@@ -352,6 +352,210 @@
           }
         }
       ]
+    },
+    {
+      "id": "004-structure",
+      "title": "Structure-aware critic vs real pop (blind test, 12 pairs)",
+      "notes": "Critic retrained with phrase-structure fakes (second phrase from another song) and sparse fakes (thinned real melodies); fitness also matches phrase-parallel repetition (bar k vs k+4). 'evolved' = starred best + 7 archive cells; 'reference' = mainstream pop excerpts (Avicii, Adele, ABBA, Florence + the Machine) from the held-out split, rendered identically. 'Sounds real' = independent grader 2.",
+      "date": "2026-10-14",
+      "clips": [
+        {
+          "id": "evolved-01",
+          "label": "evolved",
+          "mid": "audio/004-structure/evolved-01.mid",
+          "source": "out/final_v3/star_6_3_0.938.mid",
+          "fitness": 0.938,
+          "chords": "IV ii IV I IV IV IV I IV IV IV IV IV IV V vi",
+          "desc": {
+            "density": 7.12,
+            "entropy": 3.63,
+            "range": 21,
+            "compression": 0.44
+          },
+          "p_real": 0.787
+        },
+        {
+          "id": "evolved-02",
+          "label": "evolved",
+          "mid": "audio/004-structure/evolved-02.mid",
+          "source": "out/final_v3/cell_0_0_0.914.mid",
+          "fitness": 0.914,
+          "chords": "ii ii I I IV IV IV vi ii ii IV IV IV IV I I",
+          "desc": {
+            "density": 1.88,
+            "entropy": 2.78,
+            "range": 11,
+            "compression": 0.34
+          },
+          "p_real": 0.548
+        },
+        {
+          "id": "evolved-03",
+          "label": "evolved",
+          "mid": "audio/004-structure/evolved-03.mid",
+          "source": "out/final_v3/cell_0_7_0.643.mid",
+          "fitness": 0.643,
+          "chords": "ii ii I I IV IV IV vi ii IV IV IV IV I I I",
+          "desc": {
+            "density": 2.62,
+            "entropy": 4.72,
+            "range": 18,
+            "compression": 0.47
+          },
+          "p_real": 0.659
+        },
+        {
+          "id": "evolved-04",
+          "label": "evolved",
+          "mid": "audio/004-structure/evolved-04.mid",
+          "source": "out/final_v3/cell_2_2_0.881.mid",
+          "fitness": 0.881,
+          "chords": "ii ii IVmaj7 IV IV IV IV I IV ii7 IV ii7 IV IV I I",
+          "desc": {
+            "density": 4.0,
+            "entropy": 3.36,
+            "range": 17,
+            "compression": 0.4
+          },
+          "p_real": 0.742
+        },
+        {
+          "id": "evolved-05",
+          "label": "evolved",
+          "mid": "audio/004-structure/evolved-05.mid",
+          "source": "out/final_v3/cell_3_3_0.935.mid",
+          "fitness": 0.935,
+          "chords": "ii ii ii I IV IV IV I IV IV IV IV I IV vi IV",
+          "desc": {
+            "density": 4.88,
+            "entropy": 3.68,
+            "range": 21,
+            "compression": 0.38
+          },
+          "p_real": 0.769
+        },
+        {
+          "id": "evolved-06",
+          "label": "evolved",
+          "mid": "audio/004-structure/evolved-06.mid",
+          "source": "out/final_v3/cell_4_4_0.936.mid",
+          "fitness": 0.936,
+          "chords": "ii ii ii I IV IV IV I IV IV IV IV IV I vi IV",
+          "desc": {
+            "density": 5.62,
+            "entropy": 3.75,
+            "range": 21,
+            "compression": 0.42
+          },
+          "p_real": 0.773
+        },
+        {
+          "id": "evolved-07",
+          "label": "evolved",
+          "mid": "audio/004-structure/evolved-07.mid",
+          "source": "out/final_v3/cell_5_5_0.937.mid",
+          "fitness": 0.937,
+          "chords": "IV ii ii I IV IV IV I IV I IV IV IV I vi vi",
+          "desc": {
+            "density": 6.0,
+            "entropy": 4.36,
+            "range": 21,
+            "compression": 0.47
+          },
+          "p_real": 0.789
+        },
+        {
+          "id": "evolved-08",
+          "label": "evolved",
+          "mid": "audio/004-structure/evolved-08.mid",
+          "source": "out/final_v3/cell_6_7_0.906.mid",
+          "fitness": 0.906,
+          "chords": "vi IV I I IV IV IV IV vi IV IV IV vi IV vi vi",
+          "desc": {
+            "density": 7.12,
+            "entropy": 4.71,
+            "range": 23,
+            "compression": 0.51
+          },
+          "p_real": 0.756
+        },
+        {
+          "id": "reference-01",
+          "label": "reference",
+          "mid": "audio/004-structure/reference-01.mid",
+          "source": "out/reference4/ref_abba_so-long.mid",
+          "fitness": null,
+          "chords": "I I bVII bVII IV IV IV IV I I bVII bVII IV IV IV IV",
+          "desc": {
+            "density": 5.0,
+            "entropy": 3.23,
+            "range": 4,
+            "compression": 0.4
+          },
+          "p_real": 0.787,
+          "credit": {
+            "text": "Abba \u2013 So Long (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/abba/so-long"
+          }
+        },
+        {
+          "id": "reference-02",
+          "label": "reference",
+          "mid": "audio/004-structure/reference-02.mid",
+          "source": "out/reference4/ref_adele_set-fire-to-the-rain.mid",
+          "fitness": null,
+          "chords": "ii ii vi vi I I V V ii ii vi vi I I V V",
+          "desc": {
+            "density": 4.5,
+            "entropy": 3.88,
+            "range": 11,
+            "compression": 0.42
+          },
+          "p_real": 0.804,
+          "credit": {
+            "text": "Adele \u2013 Set Fire To The Rain (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/adele/set-fire-to-the-rain"
+          }
+        },
+        {
+          "id": "reference-03",
+          "label": "reference",
+          "mid": "audio/004-structure/reference-03.mid",
+          "source": "out/reference4/ref_avicii_dear-boy.mid",
+          "fitness": null,
+          "chords": "IV V vi iii IV V iii vi IV V vi iii IV V I I",
+          "desc": {
+            "density": 5.38,
+            "entropy": 3.98,
+            "range": 23,
+            "compression": 0.47
+          },
+          "p_real": 0.779,
+          "credit": {
+            "text": "Avicii \u2013 Dear Boy (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/avicii/dear-boy"
+          }
+        },
+        {
+          "id": "reference-04",
+          "label": "reference",
+          "mid": "audio/004-structure/reference-04.mid",
+          "source": "out/reference4/ref_florence-and-the-machine_hunger.mid",
+          "fitness": null,
+          "chords": "I I IV IV vi vi V V V V IV IV vi vi V V",
+          "desc": {
+            "density": 5.62,
+            "entropy": 4.01,
+            "range": 27,
+            "compression": 0.51
+          },
+          "p_real": 0.746,
+          "credit": {
+            "text": "Florence And The Machine \u2013 Hunger (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/florence-and-the-machine/hunger"
+          }
+        }
+      ]
     }
   ]
 }
