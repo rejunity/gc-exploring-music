@@ -1,9 +1,18 @@
-"""MAP-Elites archive over complexity descriptors, with a starred global best.
+"""MAP-Elites archive with a starred global best.
 
-    uv run python -m evomusic.mapelites --lm models/critic_lm.pt --disc models/critic_disc.pt --iters 400 --out out/me1
+    uv run python -m evomusic.mapelites --genome form --cvt data/cvt_hooktheory.json \
+        --lm models/critic_lm.pt --disc models/critic_disc_r9.pt --desc data/processed/desc_bands.json --iters 300 --out out/me1
 
-Axes (the "knobs"): notes per bar (density) x melodic symbol entropy (variety).
-Every filled cell keeps its best melody; the global best is exported as star_*.mid.
+Genomes ("search spaces"):
+  notes : flat melody + chords (evomusic.genome.Genome)
+  form  : motifs + phrase plan + transformations (evomusic.form.FormGenome)
+
+Archives:
+  grid  : the original 2-D knobs, notes per bar x melodic entropy (--bins)
+  cvt   : 128 cells placed by k-means on real pop phrases in an 8-D behaviour
+          space (evomusic.behaviour); cell weights = share of real pop there
+
+Every filled cell keeps its best piece; the global best is exported as star_*.mid.
 """
 from __future__ import annotations
 
@@ -38,46 +47,127 @@ def descriptors_fast(g: Genome) -> dict:
     return {"notes_per_bar": len(g.pitches()) / g.bars, "symbol_entropy": symbol_entropy(g)}
 
 
-def run(fitness, iters: int, batch: int, bins: int, seed: int, init: int, log=lambda *a: print(*a, flush=True), seeds: list[Genome] | None = None):
+# ----------------------------------------------------------------------------- search spaces
+
+class NoteSpace:
+    name = "notes"
+
+    def random(self, rng):
+        return Genome.random(rng=rng, in_scale=rng.random() < 0.5)
+
+    def mutate(self, x, rng, rate):
+        return mutate(x, rng, rate)
+
+    def crossover(self, a, b, rng):
+        return crossover(a, b, rng)
+
+    def pheno(self, x) -> Genome:
+        return x
+
+    def dump(self, x) -> dict:
+        return {}
+
+    def load(self, entry: dict):
+        return Genome([tuple(t) for t in entry["melody"]], entry["chord_ids"], 8)
+
+
+class FormSpace:
+    name = "form"
+
+    def __init__(self):
+        from evomusic.form import load_stats
+        self.stats = load_stats()
+
+    def random(self, rng):
+        from evomusic.form import random_form
+        return random_form(rng, self.stats)
+
+    def mutate(self, x, rng, rate):
+        from evomusic.form import mutate_form
+        return mutate_form(x, rng, rate, self.stats)
+
+    def crossover(self, a, b, rng):
+        from evomusic.form import crossover_form
+        return crossover_form(a, b, rng)
+
+    def pheno(self, x) -> Genome:
+        return x.to_genome()
+
+    def dump(self, x) -> dict:
+        return {"form": x.to_json()}
+
+    def load(self, entry: dict):
+        from evomusic.form import FormGenome, from_genome
+        if "form" in entry:
+            return FormGenome.from_json(entry["form"])
+        return from_genome(Genome([tuple(t) for t in entry["melody"]], entry["chord_ids"], 8))[0]
+
+
+SPACES = {"notes": NoteSpace, "form": FormSpace}
+
+
+# ----------------------------------------------------------------------------- the algorithm
+
+def run(fitness, iters: int, batch: int, bins: int, seed: int, init: int,
+        log=lambda *a: print(*a, flush=True), seeds: list | None = None, space=None, cell_fn=None):
+    """Returns {cell: (fitness, genotype)}. Defaults (notes genome, 2-D grid) keep the old behaviour."""
+    space = space or NoteSpace()
+    cell_fn = cell_fn or (lambda g: cell(g, bins))
     rng = random.Random(seed)
-    archive: dict[tuple, tuple[float, Genome]] = {}
+    archive: dict = {}
 
-    def insert(gs):
-        fs = fitness.score_all(gs)
-        for g, f in zip(gs, fs):
-            c = cell(g, bins)
+    def insert(xs):
+        ph = [space.pheno(x) for x in xs]
+        fs = fitness.score_all(ph)
+        for x, g, f in zip(xs, ph, fs):
+            c = cell_fn(g)
             if c not in archive or f > archive[c][0]:
-                archive[c] = (f, g)
+                archive[c] = (f, x)
 
-    insert((seeds or []) + [Genome.random(rng=rng, in_scale=rng.random() < 0.5) for _ in range(init)])
+    insert((seeds or []) + [space.random(rng) for _ in range(init)])
     t0 = time.time()
     for it in range(iters):
-        elites = [g for _, g in archive.values()]
+        elites = [x for _, x in archive.values()]
         kids = []
         for _ in range(batch):
             a = rng.choice(elites)
             if rng.random() < 0.5:
-                a = crossover(a, rng.choice(elites), rng)
-            kids.append(mutate(a, rng, rng.choice([0.7, 1.5, 3.0])))
+                a = space.crossover(a, rng.choice(elites), rng)
+            kids.append(space.mutate(a, rng, rng.choice([0.7, 1.5, 3.0])))
         insert(kids)
         if it % 50 == 0 or it == iters - 1:
             fs = [f for f, _ in archive.values()]
-            log(f"iter {it:4d}  cells {len(archive):3d}/{bins * bins}  best {max(fs):.3f}  mean {sum(fs) / len(fs):.3f}  {time.time() - t0:.0f}s")
+            log(f"iter {it:4d}  cells {len(archive):3d}  best {max(fs):.3f}  mean {sum(fs) / len(fs):.3f}  {time.time() - t0:.0f}s")
     return archive
 
 
-def export(archive, fitness, out: Path, bins: int) -> dict:
+def _cell_name(c) -> str:
+    return f"{c[0]}_{c[1]}" if isinstance(c, tuple) else f"{c:03d}"
+
+
+def export(archive, fitness, out: Path, bins: int, space=None, cvt=None) -> dict:
+    from evomusic.form import from_genome
+    space = space or NoteSpace()
     out.mkdir(parents=True, exist_ok=True)
     best_c = max(archive, key=lambda c: archive[c][0])
     cells = []
-    for c, (f, g) in sorted(archive.items()):
-        name = (f"star_{c[0]}_{c[1]}_{f:.3f}" if c == best_c else f"cell_{c[0]}_{c[1]}_{f:.3f}")
+    for c, (f, x) in sorted(archive.items()):
+        g = space.pheno(x)
+        name = (f"star_{_cell_name(c)}_{f:.3f}" if c == best_c else f"cell_{_cell_name(c)}_{f:.3f}")
         g.to_midi().save(out / f"{name}.mid")
-        cells.append({"file": f"{name}.mid", "cell": c, "fitness": f, "chords": g.chord_names(),
-                      "descriptors": {k: round(v, 3) for k, v in descriptors(g).items()},
-                      "melody": g.melody, "chord_ids": g.chords})
-    bd = fitness.breakdown(archive[best_c][1])
-    summary = {"axes": AXES, "bins": bins, "star": cells[[x["cell"] for x in cells].index(best_c)]["file"],
+        entry = {"file": f"{name}.mid", "cell": c, "fitness": f, "chords": g.chord_names(),
+                 "descriptors": {k: round(v, 3) for k, v in descriptors(g).items()},
+                 "plan": " ".join(from_genome(g)[1]),
+                 "melody": g.melody, "chord_ids": g.chords, **space.dump(x)}
+        if cvt is not None:
+            from evomusic.behaviour import behaviour
+            entry["behaviour"] = {k: round(v, 3) for k, v in behaviour(g).items()}
+            entry["cell_weight"] = cvt.weights[c]
+        cells.append(entry)
+    bd = fitness.breakdown(space.pheno(archive[best_c][1]))
+    summary = {"genome": space.name, "archive": "cvt" if cvt is not None else "grid",
+               "axes": cvt.dims if cvt is not None else AXES, "bins": len(cvt) if cvt is not None else bins,
+               "star": next(e["file"] for e in cells if e["cell"] == best_c),
                "star_breakdown": bd, "saved": cells}
     (out / "summary.json").write_text(json.dumps(summary, indent=1, default=list))
     return summary
@@ -85,6 +175,8 @@ def export(archive, fitness, out: Path, bins: int) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--genome", choices=list(SPACES), default="notes")
+    ap.add_argument("--cvt", type=Path, help="behaviour-space centroids (evomusic.behaviour fit); replaces the 2-D grid")
     ap.add_argument("--iters", type=int, default=400)
     ap.add_argument("--batch", type=int, default=256)
     ap.add_argument("--bins", type=int, default=8)
@@ -102,17 +194,27 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=Path("out/me"))
     ap.add_argument("--resume", type=Path, nargs="*", default=[], help="summary.json files whose pieces seed the archive (continue a lineage)")
     a = ap.parse_args()
-    fitness = build(a.rules, a.ngram, 0.5, a.lm, a.lm_w, a.disc or None, a.disc_w, a.desc, a.desc_w, a.amt_w)
+
+    space = SPACES[a.genome]()
+    cvt = None
+    if a.cvt:
+        from evomusic.behaviour import CVT
+        cvt = CVT(a.cvt)
+    # behaviour dimensions are the archive's axes, not targets: keep them out of the descriptor-band term
+    exclude = tuple(cvt.dims) + ("parallel_rhythm", "parallel_contour", "distinct_chords") if cvt is not None else ()
+    fitness = build(a.rules, a.ngram, 0.5, a.lm, a.lm_w, a.disc or None, a.disc_w, a.desc, a.desc_w, a.amt_w, desc_exclude=exclude)
+
     seeds = []
     for path in a.resume:
         if path.exists():
-            for c in json.loads(path.read_text()).get("saved", []):
-                if "melody" in c and "chord_ids" in c:
-                    seeds.append(Genome([tuple(x) for x in c["melody"]], c["chord_ids"], 8))
+            for e in json.loads(path.read_text()).get("saved", []):
+                if "melody" in e and "chord_ids" in e:
+                    seeds.append(space.load(e))
     if seeds:
         print(f"resuming from {len(seeds)} pieces", flush=True)
-    archive = run(fitness, a.iters, a.batch, a.bins, a.seed, a.init, seeds=seeds)
-    s = export(archive, fitness, a.out, a.bins)
+    archive = run(fitness, a.iters, a.batch, a.bins, a.seed, a.init, seeds=seeds, space=space,
+                  cell_fn=cvt.cell if cvt is not None else None)
+    s = export(archive, fitness, a.out, a.bins, space, cvt)
     print("star:", s["star"], {k: round(v, 3) for k, v in s["star_breakdown"].items()})
 
 

@@ -45,8 +45,9 @@ def report(real: list[Genome], evolved: list[Genome], critics: dict[str, Critic]
     lm = next((c for c in critics.values() if c.lm), None)
     if lm:
         rows.append(_row("lm_nll", lm.nll(real), lm.nll(evolved)))
+    from evomusic.behaviour import behaviour
     from evomusic.fitness.descriptors import form, phrase_parallel
-    ext = lambda g: descriptors(g) | form(g) | {"parallel_rhythm": phrase_parallel(g)[0]}
+    ext = lambda g: descriptors(g) | form(g) | behaviour(g) | {"parallel_rhythm": phrase_parallel(g)[0]}
     dr, de = [ext(g) for g in real], [ext(g) for g in evolved]
     for k in dr[0]:
         rows.append(_row(k, [d[k] for d in dr], [d[k] for d in de]))
@@ -64,6 +65,15 @@ def _row(name, real, ev):
 
 
 DENSITY_BUCKETS = [(0, 2.75), (2.75, 3.5), (3.5, 5), (5, 7), (7, 99)]
+
+
+def plan_profile(gs: list[Genome]) -> dict[str, float]:
+    """Share of bars that are new material, exact repeats, sequences, new endings, same-rhythm, fragments."""
+    from collections import Counter
+    from evomusic.form import from_genome
+    c = Counter(t[1:] or "new" for g in gs for t in from_genome(g)[1])
+    tot = sum(c.values())
+    return {k: c.get(k, 0) / tot for k in ("new", "=", "~", "'", "*", "f")}
 
 
 def amt_rows(real: list[Genome], evolved: list[Genome], amt) -> list[dict]:
@@ -133,6 +143,11 @@ def main() -> None:
         if r["metric"].startswith("amt_nll gap"):
             print(f"{r['metric']:32s} evolved minus real median in same density bucket: {r['evolved_p50']:+.3f}"); continue
         print(f"{r['metric']:32s} {r['real_p10']:9.3f} {r['real_p50']:8.3f} {r['real_p90']:8.3f} | {r['evolved_p50']:11.3f} {r['in_band']:8.0%}  {extra}")
+    pr_, pe_ = plan_profile(real), plan_profile(ev)
+    names = {"new": "new material", "=": "exact repeat", "~": "sequence", "'": "new ending", "*": "same rhythm", "f": "fragment"}
+    print("\nbar-by-bar form (share of bars):        real   evolved")
+    for k, n in names.items():
+        print(f"  {n:36s} {pr_[k]:6.1%}  {pe_[k]:7.1%}")
     if a.human:
         scorers = {f"p_real[{n}]": c.p_real for n, c in critics.items()}
         lmc = next((c for c in critics.values() if c.lm), None)

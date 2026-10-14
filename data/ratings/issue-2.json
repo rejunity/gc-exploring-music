@@ -1,0 +1,31 @@
+{
+ "issue": 2,
+ "author": "rejunity",
+ "createdAt": "2026-10-14T07:14:06Z",
+ "ratings": [
+  {
+   "t": "2026-10-14T07:12:33.841Z",
+   "rater": "rej",
+   "batch": "001-rules-v1",
+   "a": "random-02",
+   "b": "scale-01",
+   "choice": "B"
+  },
+  {
+   "t": "2026-10-14T07:13:16.007Z",
+   "rater": "rej",
+   "batch": "001-rules-v1",
+   "a": "random-02",
+   "b": "scale-02",
+   "choice": "tie"
+  },
+  {
+   "t": "2026-10-14T07:13:59.396Z",
+   "rater": "rej",
+   "batch": "001-rules-v1",
+   "a": "random-01",
+   "b": "evolved-03",
+   "choice": "B"
+  }
+ ]
+}

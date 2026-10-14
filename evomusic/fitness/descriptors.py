@@ -95,8 +95,9 @@ def _score(x: float, q5: float, q25: float, q75: float, q95: float) -> float:
     return max(0.0, (q95 - x) / (q95 - q75)) if q95 > q75 else float(x <= q75)
 
 
-def term(bands_path: Path = ROOT / "data/processed/desc_bands.json"):
-    bands = json.loads(bands_path.read_text())
+def term(bands_path: Path = ROOT / "data/processed/desc_bands.json", exclude: tuple = ()):
+    """Mean band score over descriptors; `exclude` drops descriptors that are archive axes (knobs, not targets)."""
+    bands = {k: v for k, v in json.loads(bands_path.read_text()).items() if k not in exclude}
     def f(g: Genome) -> float:
         d = cheap_descriptors(g)
         return sum(_score(d[k], *bands[k]) for k in bands) / len(bands)
