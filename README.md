@@ -1,6 +1,6 @@
-# gc-exploring-music
+# 🎧 **[Listen and rate: https://rejunity.github.io/gc-exploring-music](https://rejunity.github.io/gc-exploring-music)**
 
-Repo: https://github.com/rejunity/gc-exploring-music (GPL-3.0, see LICENSE).
+# gc-exploring-music
 
 Generative music via an evolutionary process. A population of random melodies is
 evolved toward "musical" results under a fitness score that combines music-theory
@@ -52,7 +52,11 @@ uv run python -m evomusic.render out/smoke.mid   # -> out/smoke.mp3 (fluidsynth 
 
 Needs `apt install fluidsynth fluid-soundfont-gm ffmpeg`.
 
-## Data licensing notes
+## Licensing
+
+This repository, https://github.com/rejunity/gc-exploring-music, is licensed under GPL-3.0 (see LICENSE).
+
+### Data licensing notes
 
 - **Essen Folksong Collection**: the legal status is "unclear" (per the music21
   corpus notes; the data was entered by many contributors over decades). It is
