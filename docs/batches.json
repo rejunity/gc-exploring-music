@@ -760,6 +760,134 @@
           }
         }
       ]
+    },
+    {
+      "id": "20261014-run4",
+      "title": "corpus run, 200 iterations, seed 0",
+      "notes": "GitHub Actions run 4 on exp/test-corpus (corpus fitness, CPU). 'AMT gap' = large-critic check: NLL minus real pop of similar density (negative = more natural).",
+      "date": "2026-10-14",
+      "clips": [
+        {
+          "id": "evolved-01",
+          "label": "evolved",
+          "mid": "audio/20261014-run4/evolved-01.mid",
+          "source": "../run/star_2_4_0.991.mid",
+          "fitness": 0.991,
+          "chords": "vi vi IV I I IV V V vi vi IV IV I I vi IV",
+          "desc": {
+            "density": 3.62,
+            "entropy": 4.06,
+            "range": 15,
+            "compression": 0.42
+          },
+          "amt_gap": 0.203
+        },
+        {
+          "id": "evolved-02",
+          "label": "evolved",
+          "mid": "audio/20261014-run4/evolved-02.mid",
+          "source": "../run/cell_0_0_0.977.mid",
+          "fitness": 0.977,
+          "chords": "vi vi vi ii V I V IV vi vi vi I I I V I",
+          "desc": {
+            "density": 2.62,
+            "entropy": 2.75,
+            "range": 16,
+            "compression": 0.36
+          },
+          "amt_gap": 0.132
+        },
+        {
+          "id": "evolved-03",
+          "label": "evolved",
+          "mid": "audio/20261014-run4/evolved-03.mid",
+          "source": "../run/cell_1_0_0.983.mid",
+          "fitness": 0.983,
+          "chords": "vi vi vi ii I I V IV vi vi vi IV I I vi IV",
+          "desc": {
+            "density": 2.88,
+            "entropy": 2.79,
+            "range": 16,
+            "compression": 0.37
+          },
+          "amt_gap": -0.01
+        },
+        {
+          "id": "evolved-04",
+          "label": "evolved",
+          "mid": "audio/20261014-run4/evolved-04.mid",
+          "source": "../run/cell_2_2_0.976.mid",
+          "fitness": 0.976,
+          "chords": "vi vi IV I vi vi V V vi vi IV IV I IV V V",
+          "desc": {
+            "density": 3.5,
+            "entropy": 3.35,
+            "range": 15,
+            "compression": 0.4
+          },
+          "amt_gap": 0.085
+        },
+        {
+          "id": "evolved-05",
+          "label": "evolved",
+          "mid": "audio/20261014-run4/evolved-05.mid",
+          "source": "../run/cell_3_5_0.988.mid",
+          "fitness": 0.988,
+          "chords": "vi vi IV I I IVmaj7 V V vi vi IV I I IVmaj7 V V",
+          "desc": {
+            "density": 4.25,
+            "entropy": 4.26,
+            "range": 21,
+            "compression": 0.49
+          },
+          "amt_gap": 0.226
+        },
+        {
+          "id": "evolved-06",
+          "label": "evolved",
+          "mid": "audio/20261014-run4/evolved-06.mid",
+          "source": "../run/cell_4_5_0.986.mid",
+          "fitness": 0.986,
+          "chords": "vi vi IV V I V V V vi vi IV V I V V V",
+          "desc": {
+            "density": 5.12,
+            "entropy": 4.2,
+            "range": 21,
+            "compression": 0.45
+          },
+          "amt_gap": 0.324
+        },
+        {
+          "id": "evolved-07",
+          "label": "evolved",
+          "mid": "audio/20261014-run4/evolved-07.mid",
+          "source": "../run/cell_5_6_0.986.mid",
+          "fitness": 0.986,
+          "chords": "IV vi IV IV I V V V V V IV IV I IV vi IV",
+          "desc": {
+            "density": 6.25,
+            "entropy": 4.47,
+            "range": 21,
+            "compression": 0.49
+          },
+          "amt_gap": 0.359
+        },
+        {
+          "id": "evolved-08",
+          "label": "evolved",
+          "mid": "audio/20261014-run4/evolved-08.mid",
+          "source": "../run/cell_6_7_0.979.mid",
+          "fitness": 0.979,
+          "chords": "vi vi IV IV I vi V V vi vi IV IV I vi V V",
+          "desc": {
+            "density": 6.75,
+            "entropy": 4.71,
+            "range": 22,
+            "compression": 0.49
+          },
+          "amt_gap": 0.303
+        }
+      ]
     }
   ]
 }
