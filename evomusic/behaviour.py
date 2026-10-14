@@ -1,12 +1,13 @@
 """Behaviour space shaped by real pop (CVT-MAP-Elites).
 
-Each piece gets a behaviour vector:
+Each piece gets a 9-D behaviour vector:
 
   notes_per_bar    density
   symbol_entropy   melodic variety
   period_echo      how much bars 5-6 echo bars 1-2 (question / answer)
   climax_pos       where the highest note sits (0 = first bar, 1 = last)
   distinct_motifs  how many different bar-motifs the form parser finds
+  exact_share      share of bars that literally repeat an earlier bar
   four_chord_share share of half-bars on I / IV / V / vi (and their 7th / sus forms)
   minor_share      share of half-bars on minor chords (mood)
   chord_changes    harmonic rhythm
@@ -33,7 +34,7 @@ from evomusic.genome import CHORDS, Genome
 
 ROOT = Path(__file__).resolve().parent.parent
 CVT_PATH = ROOT / "data" / "cvt_hooktheory.json"
-DIMS = ["notes_per_bar", "symbol_entropy", "period_echo", "climax_pos", "distinct_motifs",
+DIMS = ["notes_per_bar", "symbol_entropy", "period_echo", "climax_pos", "distinct_motifs", "exact_share",
         "four_chord_share", "minor_share", "chord_changes"]
 FOUR = {"I", "IV", "V", "vi", "Imaj7", "IVmaj7", "V7", "vi7", "Isus4", "Vsus4"}
 MINOR = {"ii", "iii", "vi", "ii7", "vi7", "iv"}
@@ -44,13 +45,15 @@ def behaviour(g: Genome) -> dict[str, float]:
     from evomusic.fitness.descriptors import form
     from evomusic.form import from_genome
     f = form(g)
+    fg, toks = from_genome(g)
     names = [CHORDS[c].name for c in g.chords]
     return {
         "notes_per_bar": len(g.pitches()) / g.bars,
         "symbol_entropy": symbol_entropy(g),
         "period_echo": f["period_echo"],
         "climax_pos": f["climax_pos"],
-        "distinct_motifs": float(len(from_genome(g)[0].motifs)),
+        "distinct_motifs": float(len(fg.motifs)),
+        "exact_share": sum(t.endswith("=") for t in toks) / len(toks),
         "four_chord_share": sum(n in FOUR for n in names) / len(names),
         "minor_share": sum(n in MINOR for n in names) / len(names),
         "chord_changes": sum(a != b for a, b in zip(g.chords, g.chords[1:])) / (len(g.chords) - 1),

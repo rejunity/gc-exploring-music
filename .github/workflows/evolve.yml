@@ -122,7 +122,7 @@ jobs:
           if [ "$CONT" = "true" ] && ls ../site/docs/archive/*.json >/dev/null 2>&1; then
             RESUME="--resume $(ls -t ../site/docs/archive/*.json | head -1)"
           fi
-          COMMON="--genome $GENOME --cvt data/cvt_hooktheory.json --desc data/processed/desc_bands.json --desc-w 2.5 --rules 0.5 --iters $ITERS --batch 128 --init 512 --seed $SEED --out ../run $RESUME"
+          COMMON="--genome $GENOME --cvt data/cvt_hooktheory.json --desc data/processed/desc_bands.json --desc-w 2.5 --rules 0.5 --form-w 1.5 --iters $ITERS --batch 128 --init 512 --seed $SEED --out ../run $RESUME"
           if [ "$MODE" = "critic" ]; then
             .venv/bin/python -m evomusic.mapelites $COMMON --lm models/critic_lm.pt \
               --disc models/critic_disc_r7.pt models/critic_disc_r8.pt models/critic_disc_r9.pt --disc-w 2

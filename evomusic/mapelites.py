@@ -190,6 +190,7 @@ def main() -> None:
     ap.add_argument("--lm-w", type=float, default=1.0)
     ap.add_argument("--desc", type=Path, help="descriptor bands json (fitness.descriptors fit)")
     ap.add_argument("--desc-w", type=float, default=2.0)
+    ap.add_argument("--form-w", type=float, default=0.0, help="weight of the form-likelihood term (bar-by-bar plan vs real pop)")
     ap.add_argument("--amt-w", type=float, default=0.0, help="Anticipatory Music Transformer term weight (GPU, ~15 genomes/s)")
     ap.add_argument("--out", type=Path, default=Path("out/me"))
     ap.add_argument("--resume", type=Path, nargs="*", default=[], help="summary.json files whose pieces seed the archive (continue a lineage)")
@@ -202,7 +203,8 @@ def main() -> None:
         cvt = CVT(a.cvt)
     # behaviour dimensions are the archive's axes, not targets: keep them out of the descriptor-band term
     exclude = tuple(cvt.dims) + ("parallel_rhythm", "parallel_contour", "distinct_chords") if cvt is not None else ()
-    fitness = build(a.rules, a.ngram, 0.5, a.lm, a.lm_w, a.disc or None, a.disc_w, a.desc, a.desc_w, a.amt_w, desc_exclude=exclude)
+    fitness = build(a.rules, a.ngram, 0.5, a.lm, a.lm_w, a.disc or None, a.disc_w, a.desc, a.desc_w, a.amt_w, desc_exclude=exclude,
+                    form_w=a.form_w)
 
     seeds = []
     for path in a.resume:

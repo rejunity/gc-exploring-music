@@ -22,6 +22,7 @@ fitness term, critic and renderer works unchanged.
 
     uv run python -m evomusic.form mine      # phrase-plan statistics of real pop -> data/form_stats.json
     uv run python -m evomusic.form demo      # a few random forms, parsed real examples
+    uv run python -m evomusic.form plan-model   # P(transformation | bar position) of real pop -> data/plan_model.json
 """
 from __future__ import annotations
 
@@ -331,6 +332,59 @@ def load_stats() -> dict:
     return _STATS
 
 
+# ---------------------------------------------------------------------------- form likelihood
+
+PLAN_OPS_ORDER = ("new", "=", "~", "'", "*", "f")
+PLAN_MODEL_PATH = ROOT / "data" / "plan_model.json"
+
+
+def _op(token: str) -> str:
+    return token[1:] or "new"
+
+
+def fit_plan_model(out: Path = PLAN_MODEL_PATH) -> dict:
+    """P(op | bar position) from real pop (TRAIN), plus the band of real pieces' plan log-likelihood (VALID)."""
+    import math
+    import statistics as st
+    from evomusic.corpus.stats import load
+    from evomusic.critic.tokens import windows
+    gs = load(ROOT / "data/processed/hooktheory.jsonl")
+    win = lambda split: [w for g in gs if g.meta["split"] == split for w in windows(g, 8, 8) if w.bars == 8]
+    counts = [[1.0] * len(PLAN_OPS_ORDER) for _ in range(8)]          # add-one smoothing
+    for g in win("TRAIN"):
+        for i, t in enumerate(from_genome(g)[1]):
+            counts[i][PLAN_OPS_ORDER.index(_op(t))] += 1
+    logp = [[math.log(c / sum(row)) for c in row] for row in counts]
+    model = {"ops": PLAN_OPS_ORDER, "logp": logp}
+    ll = [plan_loglik(from_genome(g)[1], model) for g in win("VALID")]
+    q = st.quantiles(ll, n=20)
+    model["quantiles"] = (q[0], q[4], q[14], q[18])                    # p5, p25, p75, p95
+    out.write_text(json.dumps(model, indent=1))
+    return model
+
+
+def plan_loglik(tokens: list[str], model: dict) -> float:
+    return sum(model["logp"][i][PLAN_OPS_ORDER.index(_op(t))] for i, t in enumerate(tokens)) / len(tokens)
+
+
+def plan_term(path: Path = PLAN_MODEL_PATH):
+    """Fitness term: 1 when the piece's bar-by-bar form is as likely as typical real pop
+    (real p25..p75), decaying to 0 at p5 / p95. Penalises one-trick forms (everything a
+    repeat or a sequence) as well as forms that never repeat anything."""
+    model = json.loads(Path(path).read_text())
+    q5, q25, q75, q95 = model["quantiles"]
+
+    def f(g: Genome) -> float:
+        x = plan_loglik(from_genome(g)[1], model)
+        if q25 <= x <= q75:
+            return 1.0
+        if x < q25:
+            return max(0.0, (x - q5) / (q25 - q5))
+        return max(0.0, (q95 - x) / (q95 - q75))
+    f.__name__ = "form_plan"
+    return f
+
+
 # ---------------------------------------------------------------------------- random forms
 
 def random_genes(rng: random.Random, steps: int, stats: dict, start: int = 0, lead_rest: bool = True) -> list:
@@ -462,14 +516,24 @@ def _slot_op(x: FormGenome, rng: random.Random, op: str, stats: dict) -> None:
     s = x.plan[i]
     first_use = [t.motif for t in x.plan].index(s.motif) == i
     if op == "s_anchor":
-        s.anchor += rng.choice([-2, -1, 1, 2])
+        k = rng.choice([-2, -1, 1, 2])
+        if s.op == "copy" and rng.random() < 0.85:
+            # move the whole group of exact repeats together: exact repeats stay exact
+            # (moving a single copy turns it into a sequence, which real pop uses for only 3 % of bars)
+            for t in x.plan:
+                if t.motif == s.motif and t.op == "copy" and t.anchor == s.anchor and t is not s:
+                    t.anchor += k
+        s.anchor += k
     elif op == "s_transpose_motif":                       # move every occurrence: keeps the relations
         k = rng.choice([-2, -1, 1, 2])
         for t in x.plan:
             if t.motif == s.motif:
                 t.anchor += k
     elif op == "s_op" and not first_use:
-        new = rng.choice([o for o in OPS if o != s.op])
+        o = stats["ops"]
+        freq = {"copy": o.get("=", 1) + o.get("~", 1), "vary": o.get("'", 1), "rhythm": o.get("*", 1), "frag": o.get("f", 1)}
+        choices = [k for k in OPS if k != s.op]
+        new = rng.choices(choices, weights=[freq[k] for k in choices])[0]
         if new == "vary":
             sp = _sample(rng, stats["vary_split"])
             s.op, s.param = "vary", (sp, random_genes(rng, STEPS_PER_BAR - sp, stats, lead_rest=False))
@@ -525,7 +589,7 @@ def _chord_op(x: FormGenome, rng: random.Random, op: str) -> None:
 
 MUTATIONS = {
     "m_pitch": 3, "m_split": 1.5, "m_merge": 1.5, "m_nudge": 1, "m_rest": 0.7, "m_invert": 0.2, "m_retro": 0.2, "m_new": 0.4,
-    "s_anchor": 2, "s_transpose_motif": 1, "s_op": 1.2, "s_ref": 0.8, "s_tail": 1, "s_degrees": 0.6, "s_frag": 0.3,
+    "s_anchor": 1.2, "s_transpose_motif": 0.8, "s_op": 1.2, "s_ref": 0.8, "s_tail": 1, "s_degrees": 0.6, "s_frag": 0.3,
     "p_resample": 0.3, "p_swap": 0.3, "p_register": 0.2,
     "c_change": 2, "c_copy": 0.8, "c_phrase": 0.4, "c_harmonize": 1.2,
 }
@@ -602,6 +666,14 @@ def crossover_form(a: FormGenome, b: FormGenome, rng: random.Random) -> FormGeno
 
 def main(argv: list[str]) -> None:
     cmd = argv[0] if argv else ""
+    if cmd == "plan-model":
+        m = fit_plan_model()
+        print("P(op | bar) from real pop:")
+        import math
+        for i, row in enumerate(m["logp"]):
+            print(f"  bar {i + 1}: " + "  ".join(f"{o} {math.exp(v):5.1%}" for o, v in zip(PLAN_OPS_ORDER, row)))
+        print("real plan log-likelihood p5/p25/p75/p95:", [round(x, 3) for x in m["quantiles"]])
+        return
     if cmd == "mine":
         s = mine()
         tot = s["n_windows"]
