@@ -380,6 +380,67 @@ toward Lakh habits (step fraction 0.48 vs Hooktheory 0.62). Judges disagree;
 human ratings on batch 005 decide. Next: soften period_echo (target the real
 median, not the band edge), push climax later.
 
+### 6.11 Steps 2 and 3: real-pop-shaped archive, hook-and-form genome, knobs (2026-10-14)
+
+**Step 2, population-level matching.** Scoring each piece by how common its form is
+would push every piece to the single most common form (an exact echo of phrase one is
+the most common value, 31 % of real phrases). The mismatches seen in batch 005 (every
+piece echoing exactly, early climax, one four-chord loop everywhere) are population-
+level, so the fix is population-level: `evomusic/behaviour.py` places 128 MAP-Elites
+cells by k-means on real pop phrases in a 9-D behaviour space (density, melodic
+variety, phrase echo, climax position, distinct motifs, exact-repeat share, four-chord
+share, minor share, harmonic rhythm). Each cell knows its share of real pop;
+`evomusic.pick` samples published clips in proportion, so a published set has real
+pop's mix. Behaviour dimensions are archive axes, not targets (excluded from bands).
+
+**Step 3, hook-and-form genome** (`evomusic/form.py`): 1-bar motifs (rhythm +
+scale-degree contour) + an 8-slot phrase plan (which motif, anchor degree,
+transformation: copy = repeat or sequence, vary = same start / new ending, rhythm =
+same rhythm / new notes, frag = first half twice) + 16 chords. A parser rebuilds 99.7 %
+of 17,361 real phrases exactly from this form, which gives the corpus statistics:
+
+| bar | new | exact repeat | sequence | new ending | same rhythm | fragment |
+|---|---|---|---|---|---|---|
+| 1 | 100 % | | | | | |
+| 5 | 41 % | 31 % | 4 % | 15 % | 8 % | 1 % |
+| 8 | 50 % | 14 % | 5 % | 19 % | 10 % | 2 % |
+| all | 57 % | 15 % | 3 % | 13 % | 10 % | 1 % |
+
+Plans are long-tailed (top 500 cover 47 %); the most common is eight different bars
+(5.8 %), then the answered period `a b c d a= b= c= d=` (1.2 %). Random forms sample
+real plans by frequency (85 %) or random token sequences (15 %); motifs are random
+walks with corpus step / duration / rest statistics. Mutations work on motifs, slots,
+plans and chords; crossover can take structure from one parent and material from
+the other, or the question phrase from one and the answer from the other.
+
+**Results, GPU run `out/final_v5_form`** (same full fitness as batch 005):
+
+| measure | batch 004 | batch 005 | form genome | real |
+|---|---|---|---|---|
+| independent grader 2, AUC real vs evolved | 0.65 | 0.87 | 0.54 | 0.5 |
+| AMT AUC real vs evolved | 0.80 | 0.64 | 0.56 | 0.5 |
+| AMT density-matched gap | +0.20 | +0.06 | +0.03 | 0 |
+| climax position (median) | | 0.14 | 0.29 | 0.29 |
+| AMT agreement with human A/B (n=20) | 0.50 | 0.67 | 0.70 | |
+
+Remaining flaw: more repetitive than real pop (exact repeats 27 % of bars vs 15 %,
+sequences 15 % vs 3 %, new material 40 % vs 57 %). Diagnosis: the corpus terms score
+intervals, so sequences look as familiar as repeats. Fixes (for the next run):
+`form.plan_term` (P(transformation | bar position) of real pop, band-scored),
+exact-repeat share as 9th archive axis, group-wise anchor moves. On CPU smoke runs
+sequences fell to 1 % (real 3 %); exact repeats ~22 % in published picks (real 15 %).
+
+**Knobs and Produce** (`evomusic/knobs.py`, `evomusic/produce.py`,
+`.github/workflows/produce.yml`): seven knobs (complexity, predictability, density,
+repetition, darkness, harmonic adventure, energy build), each a percentile of
+held-out real pop. Produce explores a branch's current pieces without evolving: one
+burst of >= 2,000 variations (strength 1-5: 1 to ~16 edits per piece, structural
+moves, crossing pieces; keep hook / plan / harmony), quality floor = better half of
+the pool, knob match, diverse pick (maximal marginal relevance). Returns .mid + .mp3,
+commits nothing. Limit observed: one burst reaches targets near the current state
+only (predictability 40 from batch 005 stalled at ~22); far targets need Evolve
+with knob targets in the fitness (next).
+
 ## 8. Evaluation: how do we know it is working?
 
 - Fitness curves per term over generations (should rise, and not saturate
