@@ -212,7 +212,7 @@ def main() -> None:
     ap.add_argument("--resume", type=Path, nargs="*", default=[], help="summary.json files whose pieces seed the archive (continue a lineage)")
     ap.add_argument("--centre-w", type=float, default=0.1, help="pull toward each cell's real-pop centre (CVT archives only)")
     ap.add_argument("--novel-only", action="store_true", help="the LM scores only non-repeated bars")
-    ap.add_argument("--amt-novel-only", action="store_true", help="the AMT scores only non-repeated bars (audit: biased against late repeats)")
+    ap.add_argument("--amt-novel-only", action="store_true", help="the AMT scores only non-repeated bars, position-corrected")
     ap.add_argument("--agg", choices=["geo", "sum"], default="geo", help="how judges combine: geometric mean (soft AND) or weighted sum")
     a = ap.parse_args()
 

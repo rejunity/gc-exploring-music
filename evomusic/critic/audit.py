@@ -195,7 +195,7 @@ def main() -> None:
     ap.add_argument("--desc-w", type=float, default=2.5)
     ap.add_argument("--amt-w", type=float, default=0.0)
     ap.add_argument("--novel-only", action="store_true", help="the LM scores only non-repeated bars")
-    ap.add_argument("--amt-novel-only", action="store_true", help="the AMT scores only non-repeated bars (audit: biased against late repeats)")
+    ap.add_argument("--amt-novel-only", action="store_true", help="the AMT scores only non-repeated bars, position-corrected")
     ap.add_argument("--agg", choices=["geo", "sum"], default="geo")
     ap.add_argument("--json", type=Path)
     a = ap.parse_args()

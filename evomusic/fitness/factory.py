@@ -16,9 +16,8 @@ def build(rules: float = 1.0, ngram: Path | None = None, ngram_w: float = 0.5,
           desc: Path | None = None, desc_w: float = 2.0, amt_w: float = 0.0, desc_exclude: tuple = (),
           form_w: float = 0.0, agg: str = "geo", novel_only: bool = False, amt_novel_only: bool = False) -> Composite:
     """novel_only: the LM scores only bars that are not exact repeats, so repetition cannot be used
-    to look more typical. amt_novel_only does the same for the AMT; off by default because the
-    audit showed it penalising real phrases whose repeats come late (only their early,
-    context-poor bars get scored)."""
+    to look more typical. amt_novel_only: the AMT scores only non-repeated bars, each against the
+    real-pop cost of a bar at that position (critic.amt.AMTTerm mode "novel_pos")."""
     f = Composite(agg=agg)
     if form_w:
         from evomusic.form import plan_term
