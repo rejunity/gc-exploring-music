@@ -36,10 +36,11 @@ class AMTGrader:
     def nll(self, gs: list[Genome], bs: int = 4, novel_only: bool = False) -> list[float]:
         """Mean token NLL. novel_only: only events in bars that are not exact repeats of an
         earlier bar count (see Critic.nll). AMT events are (time, duration, note) triplets with
-        time in 10 ms units; pieces are rendered at 110 bpm, so a bar is 2400 units * 4 / 110..."""
-        from anticipation.config import TIME_OFFSET
+        time in 1/TIME_RESOLUTION s; pieces are rendered at 110 bpm, so bar = onset // bar_units."""
+        from anticipation.config import TIME_RESOLUTION
+        from anticipation.vocab import TIME_OFFSET
         from evomusic.critic.tokens import novel_bars
-        bar_units = 4 * 60 / 110 * 100                     # 10 ms units per bar at 110 bpm
+        bar_units = 4 * 60 / 110 * TIME_RESOLUTION         # time units per bar at 110 bpm
         seqs, masks = [], []
         for g in gs:
             ev = self.events(g)[:1020]
