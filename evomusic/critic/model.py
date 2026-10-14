@@ -105,14 +105,16 @@ class Critic:
 
     # ---- fitness terms -----------------------------------------------------
     def lm_term(self):
-        lo, hi = self.lm_meta["band"]                      # p10, p90 of held-out real NLL
-        w = hi - lo
+        if "quantiles" in self.lm_meta:                    # p5, p25, p75, p95 of held-out real NLL
+            q5, q25, q75, q95 = self.lm_meta["quantiles"]
+        else:
+            lo, hi = self.lm_meta["band"]; q5, q25, q75, q95 = lo - (hi - lo) / 4, lo, hi, hi + (hi - lo) / 4
         def score(x: float) -> float:
-            if x < lo:
-                return max(0.0, 1 - (lo - x) / w)
-            if x > hi:
-                return max(0.0, 1 - (x - hi) / w)
-            return 1.0
+            if q25 <= x <= q75:
+                return 1.0
+            if x < q25:
+                return max(0.0, (x - q5) / (q25 - q5))
+            return max(0.0, (q95 - x) / (q95 - q75))
         f = lambda g: score(self.nll([g])[0])
         f.batch = lambda gs: [score(x) for x in self.nll(gs)]
         f.__name__ = "critic_lm"

@@ -73,7 +73,7 @@ def main(argv: list[str] | None = None) -> None:
             if summary.exists():
                 for s in json.loads(summary.read_text()).get("saved", []):
                     if s["file"] == src.name:
-                        info = {"fitness": round(s["fitness"], 3), "chords": s["chords"]}
+                        info = {"fitness": None if s.get("fitness") is None else round(s["fitness"], 3), "chords": s["chords"]}
                         if "descriptors" in s:
                             d = s["descriptors"]
                             info["desc"] = {"density": round(d["notes_per_bar"], 2), "entropy": round(d["symbol_entropy"], 2),

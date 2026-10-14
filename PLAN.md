@@ -290,6 +290,42 @@ Implementation (`evomusic/critic/`):
 6. **MAP-Elites** (`evomusic/mapelites.py`) over density x melodic entropy
    produces the final archive; the global best is `star_*.mid`.
 
+### 6.8 Results, 2026-10-14 (batch 003 on the site)
+
+Adversarial v1 (GA, 128 near-identical individuals kept per run) only taught the
+discriminator to memorise: a fresh GA run still scored 0.84 under the "retrained"
+critic. v2 fixed this with diverse MAP-Elites fakes, validation on held-out
+*runs*, and a geometric-mean ensemble of the last three discriminators. Over
+rounds 5-8 fresh held-out GA output settled at ~0.80 p_real vs 0.82-0.85 for
+real music under a newly trained critic.
+
+The first final archive still exploited the ensemble it was optimised against
+(0.88 vs real 0.84) and an independent grader (fresh from the LM, other seed,
+never sees the final archive) separated it from real music with AUC 0.84: too
+many chords, no rests, too many leaps, LM loss at the edge of the real band.
+Adding the descriptor-matching term (`fitness/descriptors.py`, real p25..p75
+targets) and a tighter LM target fixed it:
+
+| measure | real median | evolved median | evolved inside real p10..p90 |
+|---|---|---|---|
+| independent grader p_real | 0.77 | 0.80 | 96 % (AUC 0.36) |
+| LM NLL | 0.75 | 0.91 | 96 % |
+| distinct chords / 8 bars | 4 | 3 | 98 % |
+| rest fraction | 0.125 | 0.125 | 98 % |
+| step fraction | 0.61 | 0.64 | 98 % |
+| entropy rate | 0.17 | 0.19 | 98 % |
+| compression | 0.42 | 0.44 | 98 % |
+
+Caveats: the grader shares the LM backbone and the synthetic fake families with
+the GA-facing critics, so shared blind spots are possible; the critic is weak
+on subtle edits (AUC ~0.6 vs single mutations, ~0.67 vs bar shuffles); and the
+Hooktheory corpus mixes pop with game and film music. Blind human A/B on batch
+003 is the real test.
+
+Reproduce: `evomusic.critic.train_lm` -> `evomusic.critic.adversarial` ->
+`scripts_final.sh` (grader) -> `evomusic.fitness.descriptors fit` ->
+`evomusic.mapelites --lm --lm-w 2 --disc r6 r7 r8 --desc ...` -> `evomusic.evaluate`.
+
 ## 8. Evaluation: how do we know it is working?
 
 - Fitness curves per term over generations (should rise, and not saturate
@@ -308,7 +344,7 @@ Implementation (`evomusic/critic/`):
 | M1 | data | Hooktheory parsed to melody+chord genome (17,478 segments, `evomusic/corpus/hooktheory.py`); POP909 / Nottingham parsers still to do | Hooktheory done 2026-10-13 |
 | M2 | rules + GA | `evomusic.evolve` with 9 hand-written rules (`fitness/rules.py`) produces 8-bar tunes with chords; first batch on the site | v1 done 2026-10-13 |
 | M3 | corpus critic | `fitness/ngram.py`: interpolated n-grams over melody / chords / chord-tones, scaled by held-out percentiles; batch 002 on the site compares reference vs rules vs rules+corpus | v1 done 2026-10-13 |
-| M4 | learned critic | transformer LM + adversarial discriminator, independent grading critic (section 6.7) | in progress 2026-10-13 |
+| M4 | learned critic | transformer LM + 8 adversarial rounds + independent grader; archive on par with real pop on every measured axis (section 6.8) | done 2026-10-14 |
 | M5 | human feedback | GitHub Pages site (`docs/`: listen + A/B rate, ratings as GitHub issues) done 2026-10-13; `evomusic.ratings pull/rank` (GitHub issues → Bradley-Terry) done; reward-model term still to do | 1 day |
 | M6 | knobs | `complexity.py` (entropy rate, compression, Lyapunov) + MAP-Elites archive with starred best | code done 2026-10-13 |
 | M7 | more styles | folk, then baroque (Bach chorales, counterpoint rules), then jazz (Weimar DB); expressive velocity | open |
