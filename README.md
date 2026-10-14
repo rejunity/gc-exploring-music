@@ -54,20 +54,30 @@ uv run python -m evomusic.mapelites --ngram data/processed/ngram_hooktheory.json
 The learned-critic mode (transformer critic, adversarial training, GPU) is
 described in [PLAN.md](PLAN.md) section 6.7-6.10.
 
-### Generate from the website (GitHub Actions)
+### Evolve and Produce from the website (GitHub Actions)
 
-The site's **Generate** tab starts a run on a free GitHub CPU runner and commits the
-results to an experiment branch `exp/<name>`, which then appears in the site's branch
-selector. Two ways to start, both limited to the repo owner and collaborators:
+Two buttons on the site, both running on free GitHub CPU runners and both limited to
+the repo owner and collaborators. Each can start from a prefilled issue (one click)
+or from the Actions tab's "Run workflow" form.
 
-1. **Prefilled issue** (one click from the site): the issue's JSON block holds the
-   parameters; the workflow comments a listen link on the issue and closes it.
-2. **Fallback**: Actions tab, "Evolve music", "Run workflow".
+- **Evolve** runs N iterations of MAP-Elites and commits the result to an experiment
+  branch `exp/<name>`, which then appears in the site's branch selector. With
+  "continue" on, a run starts from the branch's previous archive, so each branch is a
+  lineage. Genome: `form` (motifs + phrase plan, default) or `notes` (flat). Fitness:
+  `corpus` (~1 s per iteration) or `critic` (small transformer critic from the
+  `critic-v1` release, ~7.5 s per iteration, max 800). Workflow: `.github/workflows/evolve.yml`.
+- **Produce** explores what a branch already holds without evolving it: one large
+  burst of variations (thousands of candidates), scored against **knobs** and a
+  light quality floor, returned as a `.mid` + `.mp3` zip. Nothing is committed.
+  Knobs are percentiles of real pop (50 = typical): complexity, predictability,
+  density, repetition, darkness, harmonic adventure, energy build. Variation strength
+  goes from 1 (subtle) to 5 (wild); "keep" can freeze the hook, the phrase plan or the
+  harmony. Workflow: `.github/workflows/produce.yml`. Locally:
+  `uv run python -m evomusic.produce --from out/<run>/summary.json --knobs '{"complexity": 80}' --strength 4`.
 
-Modes: `corpus` (n-grams + descriptor bands, ~1 s per iteration) or `critic` (small
-transformer critic from the `critic-v1` release, ~7.5 s per iteration, max 800).
-The large Anticipatory Music Transformer runs once at the end on the published clips
-("AMT gap"). See `.github/workflows/evolve.yml`.
+Both run the large Anticipatory Music Transformer once at the end ("AMT gap":
+negative = more natural than typical real pop of that density) and attach a zip of
+`.mid` + `.mp3` (GitHub sign-in needed, kept 90 days).
 
 ## Data
 

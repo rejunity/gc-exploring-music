@@ -1,0 +1,170 @@
+# Produce music: explore a branch's current pieces without evolving them, steered by knobs.
+# One large burst of variations (thousands of candidates) is scored against the knob targets and a light
+# quality floor; a diverse set is rendered to .mid + .mp3 and returned as a downloadable zip.
+# Nothing is committed: no branch is created or updated.
+#
+# Start it from the site's "Produce" tab (prefilled issue titled "produce: ...", owner / members /
+# collaborators only) or from Actions -> "Produce music" -> "Run workflow".
+# The issue body is untrusted input: parsed and validated only by `python -m evomusic.ci produce-params`.
+name: Produce music
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:   { description: "Branch to explore: main or exp/<name>", default: "main", required: true }
+      batch:    { description: "Batch id to explore (empty = latest)", default: "", required: false }
+      n:        { description: "How many pieces (1-32)", default: "8", required: true }
+      strength: { description: "Variation strength: 1 subtle ... 5 wild", type: choice, options: ["1", "2", "3", "4", "5"], default: "3" }
+      knobs:    { description: 'Knob targets as real-pop percentiles, JSON, e.g. {"complexity": 80, "predictability": 30}', default: "{}", required: false }
+      keep:     { description: "Keep unchanged: comma list of hook, plan, harmony", default: "", required: false }
+      mode:     { description: "Quality floor", type: choice, options: [corpus, critic], default: corpus }
+      seed:     { description: "Random seed", default: "0", required: true }
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  produce:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (startsWith(github.event.issue.title, 'produce:') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      PYTHONUNBUFFERED: "1"
+      HF_HOME: ${{ github.workspace }}/.hf
+    steps:
+      - name: Checkout code (main)
+        uses: actions/checkout@v4
+        with: { path: code, fetch-depth: 0 }
+
+      - uses: astral-sh/setup-uv@v6
+        with: { enable-cache: true, cache-dependency-glob: code/uv.lock }
+
+      - name: Parse and validate parameters
+        id: p
+        working-directory: code
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          INPUT_BRANCH: ${{ inputs.branch }}
+          INPUT_BATCH: ${{ inputs.batch }}
+          INPUT_N: ${{ inputs.n }}
+          INPUT_STRENGTH: ${{ inputs.strength }}
+          INPUT_KNOBS: ${{ inputs.knobs }}
+          INPUT_KEEP: ${{ inputs.keep }}
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_SEED: ${{ inputs.seed }}
+        run: uv run --no-project python -m evomusic.ci produce-params
+
+      - name: Install CPU-only dependencies
+        working-directory: code
+        run: |
+          uv venv -q
+          uv pip install -q -e . --no-deps
+          uv pip install -q numpy mido symusic "transformers>=4.40" tqdm \
+            "anticipation @ git+https://github.com/jthickstun/anticipation.git@main"
+          uv pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Cache corpus data
+        uses: actions/cache@v4
+        with:
+          path: |
+            code/data/raw/hooktheory
+            code/data/processed
+          key: corpus-${{ hashFiles('code/data/manifest.json', 'code/evomusic/corpus/**', 'code/evomusic/fitness/**', 'code/evomusic/genome.py') }}
+
+      - name: Cache the large critic (AMT, ~1.4 GB)
+        uses: actions/cache@v4
+        with: { path: .hf, key: hf-amt-music-medium-800k }
+
+      - name: Prepare corpus (Hooktheory, n-grams, descriptor bands)
+        working-directory: code
+        run: |
+          [ -f data/processed/desc_bands.json ] || {
+            .venv/bin/python -m evomusic.data download hooktheory
+            .venv/bin/python -m evomusic.corpus.hooktheory
+            .venv/bin/python -m evomusic.fitness.ngram fit data/processed/hooktheory.jsonl data/processed/ngram_hooktheory.json
+            .venv/bin/python -m evomusic.fitness.descriptors fit data/processed/desc_bands.json
+          }
+
+      - name: Download small critic weights (critic mode)
+        if: steps.p.outputs.mode == 'critic'
+        working-directory: code
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release download critic-v1 --repo "${{ github.repository }}" --dir models --pattern '*.pt'
+
+      - name: Check out the branch to explore (read-only)
+        env: { BRANCH: "${{ steps.p.outputs.branch }}" }
+        run: |
+          if [ "$BRANCH" = "main" ]; then
+            ln -s code src
+          else
+            git -C code worktree add --detach ../src "origin/$BRANCH"
+          fi
+
+      - name: Produce variations
+        working-directory: code
+        env:
+          BATCH: ${{ steps.p.outputs.batch }}
+          N: ${{ steps.p.outputs.n }}
+          STRENGTH: ${{ steps.p.outputs.strength }}
+          KNOBS: ${{ steps.p.outputs.knobs }}
+          KEEP: ${{ steps.p.outputs.keep }}
+          MODE: ${{ steps.p.outputs.mode }}
+          SEED: ${{ steps.p.outputs.seed }}
+        run: |
+          .venv/bin/python -m evomusic.produce --site ../src/docs ${BATCH:+--batch "$BATCH"} --n "$N" --strength "$STRENGTH" \
+            --knobs "$KNOBS" --keep "$KEEP" --mode "$MODE" --seed "$SEED" --out ../produced
+
+      - name: Large critic check once (AMT, CPU)
+        working-directory: code
+        run: .venv/bin/python -m evomusic.ci final-check ../produced ../produced/chosen.txt
+
+      - name: Render .mp3 (FluidSynth, GM soundfont)
+        run: |
+          sudo apt-get install -y -qq fluidsynth fluid-soundfont-gm ffmpeg >/dev/null
+          code/.venv/bin/python -m evomusic.render produced/*.mid
+
+      - name: Upload .mid + .mp3 as a downloadable artifact
+        id: art
+        uses: actions/upload-artifact@v4
+        with:
+          name: produced-run${{ github.run_number }}
+          path: |
+            produced/*.mid
+            produced/*.mp3
+            produced/summary.json
+            produced/table.md
+          retention-days: 90
+          compression-level: 0
+
+      - name: Report back on the issue
+        if: always() && github.event_name == 'issues'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DOWNLOAD: ${{ steps.art.outputs.artifact-url }}
+          STATUS: ${{ job.status }}
+          BRANCH: ${{ steps.p.outputs.branch }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ "$STATUS" = "success" ]; then
+            {
+              echo "Done. Explored \`$BRANCH\`; nothing was committed."
+              echo
+              echo "**Download .mid + .mp3 (zip):** $DOWNLOAD"
+              echo
+              echo "Knob columns are percentiles of real pop (50 = typical)."
+              echo
+              cat produced/table.md
+              echo
+              echo "Run log: $RUN_URL"
+            } > comment.md
+            gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body-file comment.md
+            gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}"
+          else
+            gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body "Run failed ($STATUS). Log: $RUN_URL"
+          fi

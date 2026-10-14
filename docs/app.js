@@ -46,6 +46,8 @@ async function init() {
   $("#tab-listen").onclick = () => showTab("listen");
   $("#tab-rate").onclick = () => showTab("rate");
   $("#tab-generate").onclick = () => showTab("generate");
+  $("#tab-produce").onclick = () => showTab("produce");
+  initProduce();
   ["#g-branch", "#g-mode", "#g-genome", "#g-iters", "#g-seed", "#g-continue", "#g-title"].forEach((id) => ($(id).oninput = updateGenerate));
   $("#g-mode").onchange = updateGenerate; $("#g-genome").onchange = updateGenerate; $("#g-continue").onchange = updateGenerate;
   if (BRANCH.startsWith("exp/")) $("#g-branch").value = BRANCH.slice(4);
@@ -57,15 +59,16 @@ async function init() {
   $("#download-json").onclick = downloadJson;
   $("#clear-ratings").onclick = () => { if (confirm("Delete unsent ratings?")) { localStorage.removeItem(KEY); updateCount(); } };
   if (location.hash === "#rate") showTab("rate");
-  if (location.hash === "#generate") showTab("generate");
+  if (location.hash === "#generate" || location.hash === "#evolve") showTab("generate");
+  if (location.hash === "#produce") showTab("produce");
 }
 
 function showTab(name) {
-  for (const t of ["listen", "rate", "generate"]) {
+  for (const t of ["listen", "rate", "generate", "produce"]) {
     $("#" + t).hidden = name !== t;
     $("#tab-" + t).classList.toggle("active", name === t);
   }
-  location.hash = name === "listen" ? "" : "#" + name;
+  location.hash = name === "listen" ? "" : "#" + (name === "generate" ? "evolve" : name);
 }
 
 function genParams() {
@@ -199,3 +202,69 @@ function downloadJson() {
 }
 
 init();
+
+// ---------------------------------------------------------------- Produce
+const KNOBS = [
+  ["complexity", "Complexity", "melodic variety"],
+  ["predictability", "Predictability", "familiar under real-pop statistics"],
+  ["density", "Density", "notes per bar"],
+  ["repetition", "Repetition", "fewer distinct motifs, more literal repeats"],
+  ["darkness", "Darkness", "share of minor chords"],
+  ["harmonic_adventure", "Harmonic adventure", "chords beyond I, IV, V, vi"],
+  ["energy_build", "Energy build", "second half busier than the first"],
+];
+const STRENGTHS = { 1: "subtle", 2: "gentle", 3: "moderate", 4: "bold", 5: "wild" };
+
+function initProduce() {
+  const box = $("#p-knobs");
+  KNOBS.forEach(([k, name, hint]) => {
+    const row = document.createElement("div");
+    row.className = "knob";
+    row.innerHTML = `<label><input type="checkbox" id="k-on-${k}"> ${name}</label>
+      <input type="range" id="k-${k}" min="0" max="100" value="50" disabled> <span id="k-v-${k}" class="kv">free</span>
+      <span class="hint">${hint}</span>`;
+    box.appendChild(row);
+  });
+  KNOBS.forEach(([k]) => {
+    $(`#k-on-${k}`).onchange = () => { $(`#k-${k}`).disabled = !$(`#k-on-${k}`).checked; updateProduce(); };
+    $(`#k-${k}`).oninput = updateProduce;
+  });
+  ["#p-n", "#p-strength", "#p-seed"].forEach((id) => ($(id).oninput = updateProduce));
+  ["#p-mode", "#p-keep-hook", "#p-keep-plan", "#p-keep-harmony", "#p-batch"].forEach((id) => ($(id).onchange = updateProduce));
+  const bs = $("#p-branch");
+  [...$("#branch").options].forEach((o) => bs.add(new Option(o.value, o.value)));
+  bs.value = BRANCH;
+  bs.onchange = async () => { await fillProduceBatches(bs.value); updateProduce(); };
+  fillProduceBatches(bs.value).then(updateProduce);
+}
+
+async function fillProduceBatches(branch) {
+  const sel = $("#p-batch");
+  sel.innerHTML = "";
+  sel.add(new Option("latest", ""));
+  const url = branch === "main" ? "batches.json" : `https://raw.githubusercontent.com/${REPO}/${branch}/docs/batches.json?t=${Date.now()}`;
+  try {
+    const d = await (await fetch(url, { cache: "no-store" })).json();
+    [...d.batches].reverse().forEach((b) => sel.add(new Option(`${b.id} — ${b.title}`, b.id)));
+  } catch (e) { /* branch without batches: latest only */ }
+}
+
+function produceParams() {
+  const knobs = {};
+  KNOBS.forEach(([k]) => { if ($(`#k-on-${k}`).checked) knobs[k] = +$(`#k-${k}`).value; });
+  const keep = ["hook", "plan", "harmony"].filter((k) => $(`#p-keep-${k}`).checked);
+  return { branch: $("#p-branch").value, batch: $("#p-batch").value, n: Math.max(1, Math.min(32, +$("#p-n").value || 8)),
+           strength: +$("#p-strength").value, knobs, keep, mode: $("#p-mode").value, seed: +$("#p-seed").value || 0 };
+}
+
+function updateProduce() {
+  const p = produceParams();
+  KNOBS.forEach(([k]) => { $(`#k-v-${k}`).textContent = k in p.knobs ? p.knobs[k] : "free"; });
+  $("#p-strength-label").textContent = `${p.strength} — ${STRENGTHS[p.strength]}`;
+  const knobTxt = Object.entries(p.knobs).map(([k, v]) => `${k} ${v}`).join(", ");
+  const title = `produce: ${p.branch} ${p.n} pieces, strength ${p.strength}${knobTxt ? ", " + knobTxt : ""}`;
+  const body = "Started from the site's Produce tab. Parameters:\n\n```json\n" + JSON.stringify(p, null, 1) + "\n```";
+  $("#p-issue").href = `https://github.com/${REPO}/issues/new?labels=produce&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+  $("#p-dispatch").href = `https://github.com/${REPO}/actions/workflows/produce.yml`;
+  $("#p-values").textContent = `branch=${p.branch}, batch=${p.batch || "(empty)"}, n=${p.n}, strength=${p.strength}, knobs=${JSON.stringify(p.knobs)}, keep=${p.keep.join(",")}, mode=${p.mode}, seed=${p.seed}`;
+}

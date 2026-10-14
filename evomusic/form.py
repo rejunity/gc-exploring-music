@@ -417,8 +417,11 @@ def random_form(rng: random.Random, stats: dict | None = None) -> FormGenome:
 
 # ---------------------------------------------------------------------------- variation operators
 
-def _motif_op(x: FormGenome, rng: random.Random, op: str, stats: dict) -> None:
-    mi = rng.randrange(len(x.motifs))
+def _motif_op(x: FormGenome, rng: random.Random, op: str, stats: dict, frozen: frozenset = frozenset()) -> None:
+    free = [i for i in range(len(x.motifs)) if i not in frozen]
+    if not free:
+        return
+    mi = rng.choice(free)
     m = list(x.motifs[mi])
     notes = [i for i, g in enumerate(m) if g[0] is not None]
     if op == "m_pitch" and notes:
@@ -528,20 +531,43 @@ MUTATIONS = {
 }
 
 
-def mutate_form(fg: FormGenome, rng: random.Random, rate: float = 1.0, stats: dict | None = None) -> FormGenome:
+PLAN_OPS = {"s_op", "s_ref", "p_resample", "p_swap"}
+CHORD_OPS = {"c_change", "c_copy", "c_phrase", "c_harmonize"}
+
+
+def mutation_weights(keep: set[str] = frozenset(), boost_structure: float = 1.0) -> dict[str, float]:
+    """Operator weights honouring keep = {"hook", "plan", "harmony"}; boost_structure > 1 favours
+    big moves (new plans, new motifs, re-pointed slots) for wide exploration."""
+    w = dict(MUTATIONS)
+    for k in ("p_resample", "m_new", "s_ref", "s_op"):
+        w[k] *= boost_structure
+    if "plan" in keep:
+        for k in PLAN_OPS:
+            w[k] = 0.0
+    if "harmony" in keep:
+        for k in CHORD_OPS:
+            w[k] = 0.0
+    return w
+
+
+def mutate_form(fg: FormGenome, rng: random.Random, rate: float = 1.0, stats: dict | None = None,
+                weights: dict | None = None, keep_hook: bool = False) -> FormGenome:
+    """`weights` overrides operator weights (see mutation_weights); keep_hook freezes the motif of bar 1."""
     stats = stats or load_stats()
     x = fg.copy()
-    names, weights = zip(*MUTATIONS.items())
+    names, weights = zip(*(weights or MUTATIONS).items())
     for _ in range(max(1, round(rng.expovariate(1 / rate)))):
         op = rng.choices(names, weights=weights)[0]
         if op.startswith("m_"):
-            _motif_op(x, rng, op, stats)
+            _motif_op(x, rng, op, stats, frozenset({x.plan[0].motif}) if keep_hook else frozenset())
         elif op.startswith("s_"):
             _slot_op(x, rng, op, stats)
         elif op.startswith("c_"):
             _chord_op(x, rng, op)
         elif op == "p_resample":
-            x = instantiate(random_plan(rng, stats), rng, stats, motifs=x.motifs, chords=x.chords)
+            hook = x.plan[0].motif
+            order = [hook] + [i for i in range(len(x.motifs)) if i != hook]     # letter "a" keeps the hook
+            x = instantiate(random_plan(rng, stats), rng, stats, motifs=[x.motifs[i] for i in order], chords=x.chords)
         elif op == "p_swap":
             i, j = rng.sample(range(1, len(x.plan)), 2)
             x.plan[i], x.plan[j] = x.plan[j], x.plan[i]

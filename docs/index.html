@@ -14,7 +14,8 @@
   <nav>
     <button id="tab-listen" class="tab active">Listen</button>
     <button id="tab-rate" class="tab">Rate A / B</button>
-    <button id="tab-generate" class="tab">Generate</button>
+    <button id="tab-generate" class="tab">Evolve</button>
+    <button id="tab-produce" class="tab">Produce</button>
     <label class="branch">Branch <select id="branch"></select></label>
     <a class="tab link" id="repo-link" href="#" target="_blank" rel="noopener">GitHub ↗</a>
   </nav>
@@ -54,6 +55,36 @@
           <span class="hint">Press <b>Run workflow</b> there and enter the same values: <code id="g-values"></code></span></li>
       </ol>
       <p class="hint"><a id="g-runs" href="#" target="_blank" rel="noopener">See running and finished runs ↗</a></p>
+    </div>
+  </section>
+
+  <section id="produce" hidden>
+    <div class="card">
+      <p><b>Produce</b> explores what a branch already holds, <i>without evolving it</i>: one large burst of variations
+      (thousands of candidates, far more and wilder than an evolution step) is scored against the knobs below and a light
+      quality floor, and a diverse set is returned as a <b>.mid + .mp3 zip</b>. Nothing is committed; no branch changes.</p>
+      <div class="form">
+        <label>Explore branch <select id="p-branch"></select></label>
+        <label>Batch <select id="p-batch"><option value="">latest</option></select></label>
+        <label>Pieces <input id="p-n" type="number" value="8" min="1" max="32" size="4"></label>
+        <label>Variation strength <input id="p-strength" type="range" min="1" max="5" value="3"> <span id="p-strength-label"></span></label>
+        <label>Keep unchanged:
+          <label class="inline"><input type="checkbox" id="p-keep-hook"> hook (bar 1's motif)</label>
+          <label class="inline"><input type="checkbox" id="p-keep-plan"> phrase plan</label>
+          <label class="inline"><input type="checkbox" id="p-keep-harmony"> harmony</label></label>
+        <label>Quality floor <select id="p-mode">
+          <option value="corpus">corpus statistics (fast)</option>
+          <option value="critic">small transformer critic (slower)</option></select></label>
+        <label>Seed <input id="p-seed" type="number" value="0" size="6"></label>
+      </div>
+      <h3>Knobs <span class="hint">percentile of real pop: 50 = typical, 90 = more than 90% of real pop. Unticked knobs stay free.</span></h3>
+      <div id="p-knobs" class="knobs"></div>
+      <ol class="steps">
+        <li><a id="p-issue" class="button" href="#" target="_blank" rel="noopener">Produce via GitHub issue ↗</a>
+          <span class="hint">Opens a prefilled issue; press <b>Create</b>. The issue gets a download link and a table of the pieces, then closes.</span></li>
+        <li><a id="p-dispatch" href="#" target="_blank" rel="noopener">Fallback: GitHub's "Run workflow" form ↗</a>
+          <span class="hint">Enter: <code id="p-values"></code></span></li>
+      </ol>
     </div>
   </section>
 

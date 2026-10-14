@@ -1,6 +1,7 @@
 """Helpers for the GitHub Actions evolution workflow (.github/workflows/evolve.yml).
 
-    python -m evomusic.ci params          # parse + validate run parameters -> $GITHUB_OUTPUT
+    python -m evomusic.ci params          # parse + validate Evolve parameters -> $GITHUB_OUTPUT
+    python -m evomusic.ci produce-params  # parse + validate Produce parameters -> $GITHUB_OUTPUT
     python -m evomusic.ci final-check RUN_DIR CHOSEN_TXT   # AMT once on the clips to publish -> summary.json
     python -m evomusic.ci set-download DOCS BATCH URL      # link the run's .mid + .mp3 artifact on the batch
 
@@ -54,6 +55,70 @@ def validate(raw: dict) -> dict:
     return p
 
 
+KNOB_NAMES = ("complexity", "predictability", "density", "repetition", "darkness", "harmonic_adventure", "energy_build")
+SOURCE_RE = re.compile(r"^(main|exp/[a-z0-9][a-z0-9._-]{0,39})$")
+BATCH_RE = re.compile(r"^[A-Za-z0-9._-]{0,40}$")
+
+
+def validate_produce(raw: dict) -> dict:
+    p = {"branch": "main", "batch": "", "n": 8, "strength": 3, "knobs": {}, "keep": [], "mode": "corpus", "seed": 0}
+    p.update({k: v for k, v in raw.items() if k in p and v not in (None, "")})
+    p["branch"] = re.sub(r"\s+", "-", str(p["branch"]).strip().lower())
+    if p["branch"] != "main" and not p["branch"].startswith("exp/"):
+        p["branch"] = "exp/" + p["branch"]
+    if not SOURCE_RE.match(p["branch"]):
+        raise ValueError("branch must be main or exp/<name>")
+    p["batch"] = str(p["batch"]).strip()
+    if not BATCH_RE.match(p["batch"]):
+        raise ValueError("batch id may only contain letters, digits, . _ -")
+    p["n"] = int(p["n"])
+    if not 1 <= p["n"] <= 32:
+        raise ValueError("n must be 1..32")
+    p["strength"] = int(p["strength"])
+    if not 1 <= p["strength"] <= 5:
+        raise ValueError("strength must be 1..5")
+    knobs = p["knobs"]
+    if isinstance(knobs, str):
+        knobs = json.loads(knobs or "{}")
+    if not isinstance(knobs, dict):
+        raise ValueError("knobs must be a JSON object")
+    clean = {}
+    for k, v in knobs.items():
+        if k not in KNOB_NAMES:
+            raise ValueError(f"unknown knob {k!r}; known: {KNOB_NAMES}")
+        if v is not None:
+            v = float(v)
+            if not 0 <= v <= 100:
+                raise ValueError(f"knob {k} must be 0..100 (a percentile of real pop)")
+            clean[k] = round(v, 1)
+    p["knobs"] = clean
+    keep = p["keep"]
+    if isinstance(keep, str):
+        keep = [k.strip() for k in keep.split(",") if k.strip()]
+    if any(k not in ("hook", "plan", "harmony") for k in keep):
+        raise ValueError("keep may contain hook, plan, harmony")
+    p["keep"] = ",".join(sorted(set(keep)))
+    if p["mode"] not in MODES:
+        raise ValueError(f"mode must be one of {MODES}")
+    p["seed"] = int(p["seed"]) % 100000
+    p["knobs"] = json.dumps(p["knobs"], separators=(",", ":"))
+    return p
+
+
+def produce_params() -> None:
+    if os.environ.get("GITHUB_EVENT_NAME") == "issues":
+        raw = _from_issue(os.environ.get("ISSUE_BODY", ""))
+    else:
+        raw = {k: os.environ.get(f"INPUT_{k.upper()}") for k in ("branch", "batch", "n", "strength", "knobs", "keep", "mode", "seed")}
+    p = validate_produce(raw)
+    out = os.environ.get("GITHUB_OUTPUT")
+    lines = [f"{k}={v}" for k, v in p.items()]
+    if out:
+        with open(out, "a") as f:
+            f.write("\n".join(lines) + "\n")
+    print("\n".join(lines))
+
+
 def params() -> None:
     if os.environ.get("GITHUB_EVENT_NAME") == "issues":
         raw = _from_issue(os.environ.get("ISSUE_BODY", ""))
@@ -84,6 +149,9 @@ def final_check(run_dir: Path, chosen: Path) -> None:
         key = next(f"{lo}-{hi}" for lo, hi in DENSITY_BUCKETS if lo <= d < hi)
         c["amt_gap"] = round(x - med[key], 3)
     (run_dir / "summary.json").write_text(json.dumps(s, indent=1, default=list))
+    if (run_dir / "table.md").exists() and all("knobs" in e for e in s["saved"]):     # Produce runs: add the AMT column
+        from evomusic.produce import table
+        (run_dir / "table.md").write_text(table(s["saved"]) + "\n")
     print("AMT gap per clip (negative = more natural than typical real pop of that density):",
           {c["file"]: c["amt_gap"] for c in entries})
 
@@ -104,6 +172,8 @@ if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     if cmd == "params":
         params()
+    elif cmd == "produce-params":
+        produce_params()
     elif cmd == "set-download":
         set_download(Path(sys.argv[2]), sys.argv[3], sys.argv[4])
     elif cmd == "final-check":
