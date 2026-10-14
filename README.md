@@ -1,4 +1,4 @@
-# 🎧 **[Listen and rate: https://rejunity.github.io/gc-exploring-music](https://rejunity.github.io/gc-exploring-music)**
+# 🎧 **Listen and rate:  [https://rejunity.github.io/gc-exploring-music](https://rejunity.github.io/gc-exploring-music)**
 
 # gc-exploring-music
 
