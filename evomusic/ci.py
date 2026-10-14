@@ -2,6 +2,7 @@
 
     python -m evomusic.ci params          # parse + validate run parameters -> $GITHUB_OUTPUT
     python -m evomusic.ci final-check RUN_DIR CHOSEN_TXT   # AMT once on the clips to publish -> summary.json
+    python -m evomusic.ci set-download DOCS BATCH URL      # link the run's .mid + .mp3 artifact on the batch
 
 Parameters come either from workflow_dispatch inputs (env INPUT_*) or from the
 JSON block of an issue body (env ISSUE_BODY). Issue text is untrusted: it is
@@ -84,10 +85,24 @@ def final_check(run_dir: Path, chosen: Path) -> None:
           {c["file"]: c["amt_gap"] for c in entries})
 
 
+def set_download(docs: Path, batch: str, url: str) -> None:
+    """Record the run's artifact link (zip of .mid + .mp3) on the batch, for the site."""
+    if not re.match(r"^https://github\.com/[\w.-]+/[\w.-]+/actions/runs/\d+/artifacts/\d+$", url):
+        raise ValueError(f"unexpected artifact url: {url}")
+    path = docs / "batches.json"
+    data = json.loads(path.read_text())
+    for b in data["batches"]:
+        if b["id"] == batch:
+            b["download"] = url
+    path.write_text(json.dumps(data, indent=2) + "\n")
+
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     if cmd == "params":
         params()
+    elif cmd == "set-download":
+        set_download(Path(sys.argv[2]), sys.argv[3], sys.argv[4])
     elif cmd == "final-check":
         final_check(Path(sys.argv[2]), Path(sys.argv[3]))
     else:

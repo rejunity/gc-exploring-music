@@ -97,7 +97,9 @@ function renderListen() {
     const div = document.createElement("div");
     div.className = "card batch";
     const best = b.clips.filter((c) => c.fitness != null).sort((x, y) => y.fitness - x.fitness)[0];
-    div.innerHTML = `<h2>${b.title}</h2><div class="meta">${b.id} · ${b.date}${b.notes ? " · " + b.notes : ""}</div>`;
+    div.innerHTML = `<h2>${b.title}</h2><div class="meta">${b.id} · ${b.date}${b.notes ? " · " + b.notes : ""}</div>` +
+      (b.download ? `<p><a class="button" href="${b.download}" target="_blank" rel="noopener">Download .mid + .mp3 (zip) ↗</a>
+        <span class="hint">GitHub sign-in needed; kept for 90 days.</span></p>` : "");
     b.clips.forEach((c) => {
       const el = document.createElement("div");
       el.className = "clip";

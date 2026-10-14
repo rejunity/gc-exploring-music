@@ -158,6 +158,31 @@ jobs:
             --label evolved $(cat ../run/chosen.txt)
           echo "batch=$BATCH" >> "$GITHUB_OUTPUT"
 
+      - name: Render .mp3 for download (FluidSynth, GM soundfont)
+        env: { BATCH: "${{ steps.pub.outputs.batch }}" }
+        run: |
+          sudo apt-get install -y -qq fluidsynth fluid-soundfont-gm ffmpeg >/dev/null
+          mkdir -p "download/$BATCH"
+          cp site/docs/audio/"$BATCH"/*.mid "download/$BATCH/"
+          cp run/summary.json "download/$BATCH/summary.json"
+          code/.venv/bin/python -m evomusic.render download/"$BATCH"/*.mid
+
+      - name: Upload .mid + .mp3 as a downloadable artifact
+        id: art
+        uses: actions/upload-artifact@v4
+        with:
+          name: music-${{ steps.pub.outputs.batch }}
+          path: download/${{ steps.pub.outputs.batch }}
+          retention-days: 90
+          compression-level: 0
+
+      - name: Link the download on the site
+        working-directory: code
+        env:
+          BATCH: ${{ steps.pub.outputs.batch }}
+          URL: ${{ steps.art.outputs.artifact-url }}
+        run: .venv/bin/python -m evomusic.ci set-download ../site/docs "$BATCH" "$URL"
+
       - name: Commit and push the experiment branch
         working-directory: site
         env: { BRANCH: "${{ steps.p.outputs.branch }}", BATCH: "${{ steps.pub.outputs.batch }}" }
@@ -174,11 +199,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BRANCH: ${{ steps.p.outputs.branch }}
           BATCH: ${{ steps.pub.outputs.batch }}
+          DOWNLOAD: ${{ steps.art.outputs.artifact-url }}
           STATUS: ${{ job.status }}
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           if [ "$STATUS" = "success" ]; then
-            MSG="Done. Listen: https://rejunity.github.io/gc-exploring-music/?branch=$BRANCH (batch \`$BATCH\`). Run log: $RUN_URL"
+            MSG="Done. Listen: https://rejunity.github.io/gc-exploring-music/?branch=$BRANCH (batch \`$BATCH\`).
+          Download .mid + .mp3 (zip): $DOWNLOAD
+          Run log: $RUN_URL"
             gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body "$MSG"
             gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}"
           else
