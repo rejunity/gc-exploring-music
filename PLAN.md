@@ -495,8 +495,32 @@ CPU check (corpus fitness, 60 iterations), published-pick profile vs real pop:
 | sequence | 3 % | 12 % | 4 % |
 | rhythm already heard | 29 % | 46 % | 33 % |
 
-GPU pipeline queued: critic v2 + audits (`scripts_critic_v2.sh`), then the
-form genome against the new ensemble (`scripts_final_v7.sh`) -> batch 007.
+**Critic v2 results** (`scripts_critic_v2.sh`, audit with 80 held-out phrases):
+the discriminators' response to injected repetition went from rising (0.75 ->
+0.79 for a 1-bar loop) to falling (0.74 -> 0.71); real music with 3+ natural
+repeats is now scored like the rest (0.74 vs 0.82 before). Grader 3 (fresh,
+never optimised against) behaves the same. Remaining failure: the likelihood
+judges still rewarded *mild* duplication (3 bars: AMT 0.65 -> 0.75, LM 0.58 ->
+0.67), because repeating known material is the cheapest way toward typical
+predictability. Fix: **novelty-masked likelihood** (`--novel-only`): LM and AMT
+score only bars that are not exact repeats; the LM then penalises the
+corruption (0.64) and stops punishing real phrases with natural repetition
+(0.22 -> 0.71 for 3+ repeats).
+
+**Run v7** (`out/final_v7_form`, new critic, no masking) -> batch 007:
+
+| measure | batch 006 form | v7 | real |
+|---|---|---|---|
+| grader AUC real vs evolved | 0.54 (grader 2, biased) | 0.67 (grader 3) | 0.5 |
+| AMT AUC / density-matched gap | 0.56 / +0.03 | 0.57 / +0.02 | 0.5 / 0 |
+| grader agreement with human A/B (n=20) | 0.45 | **0.80** | |
+| new material / exact repeats / sequences (share of bars) | 40 / 27 / 15 % | 49 / 21 / 7 % | 57 / 15 / 3 % |
+
+Repetition moved most of the way toward real pop; the repetition-aware grader
+agrees with Renaldas' earlier A/B choices 80 % of the time, the first judge
+clearly above chance. Run v8 (`scripts_final_v8.sh`, + novelty masking) and
+its AMT audit follow; the better of the two sets the site's Evolve / Produce
+defaults.
 
 ## 8. Evaluation: how do we know it is working?
 

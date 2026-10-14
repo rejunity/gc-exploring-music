@@ -972,6 +972,218 @@
           }
         }
       ]
+    },
+    {
+      "id": "007-repetition-fix",
+      "title": "Repetition fix: form genome v3 vs real pop (blind test)",
+      "notes": "Response to 'random but formulaic / one trick repeated': the critics were found to reward repetition without limit (an audit of real phrases with injected loops), so they were retrained with over-repetition fakes and the GA's own output; likelihood judges now prefer typical real values instead of a flat band; judges combine as a geometric mean (all must agree); the archive tracks rhythm repetition and pulls toward where real pop is densest; new bars are sampled from corpus statistics so new material is as cheap as a repeat. 'Sounds real' = independent grader 3 (never optimised against). 'reference' = mainstream pop excerpts.",
+      "date": "2026-10-14",
+      "clips": [
+        {
+          "id": "evolved-01",
+          "label": "evolved",
+          "mid": "audio/007-repetition-fix/evolved-01.mid",
+          "source": "out/final_v7_form/star_085_0.950.mid",
+          "fitness": 0.95,
+          "chords": "vi vi vi V V I V V I V V V V vi V V",
+          "desc": {
+            "density": 4.75,
+            "entropy": 3.53,
+            "range": 19,
+            "compression": 0.42
+          },
+          "p_real": 0.754,
+          "plan": "a a' b b~ c d c= d'"
+        },
+        {
+          "id": "evolved-02",
+          "label": "evolved",
+          "mid": "audio/007-repetition-fix/evolved-02.mid",
+          "source": "out/final_v7_form/cell_039_0.897.mid",
+          "fitness": 0.897,
+          "chords": "I I I I I IV vi vi vi IV IV IV IV IV IV vi",
+          "desc": {
+            "density": 3.75,
+            "entropy": 3.63,
+            "range": 16,
+            "compression": 0.4
+          },
+          "p_real": 0.727,
+          "plan": "a a' b c d e d= b~"
+        },
+        {
+          "id": "evolved-03",
+          "label": "evolved",
+          "mid": "audio/007-repetition-fix/evolved-03.mid",
+          "source": "out/final_v7_form/cell_018_0.899.mid",
+          "fitness": 0.899,
+          "chords": "vi vi vi V iii I V V I iii ii ii V V V V",
+          "desc": {
+            "density": 3.75,
+            "entropy": 3.32,
+            "range": 19,
+            "compression": 0.43
+          },
+          "p_real": 0.781,
+          "plan": "a a' b b~ a' a' a' c"
+        },
+        {
+          "id": "evolved-04",
+          "label": "evolved",
+          "mid": "audio/007-repetition-fix/evolved-04.mid",
+          "source": "out/final_v7_form/cell_081_0.893.mid",
+          "fitness": 0.893,
+          "chords": "vi vi vi I iii I V V ii ii I iii iii ii ii ii",
+          "desc": {
+            "density": 4.62,
+            "entropy": 3.81,
+            "range": 17,
+            "compression": 0.49
+          },
+          "p_real": 0.765,
+          "plan": "a a' b b~ c d e f"
+        },
+        {
+          "id": "evolved-05",
+          "label": "evolved",
+          "mid": "audio/007-repetition-fix/evolved-05.mid",
+          "source": "out/final_v7_form/cell_009_0.858.mid",
+          "fitness": 0.858,
+          "chords": "I I I I I IV vi vi I I I I I IV vi vi",
+          "desc": {
+            "density": 10.25,
+            "entropy": 4.15,
+            "range": 12,
+            "compression": 0.44
+          },
+          "p_real": 0.622,
+          "plan": "a a= a= b c a' d e"
+        },
+        {
+          "id": "evolved-06",
+          "label": "evolved",
+          "mid": "audio/007-repetition-fix/evolved-06.mid",
+          "source": "out/final_v7_form/cell_068_0.860.mid",
+          "fitness": 0.86,
+          "chords": "I I I I vii\u00b0 IV vi vi I I I I bVI IV vi vi",
+          "desc": {
+            "density": 13.25,
+            "entropy": 3.25,
+            "range": 23,
+            "compression": 0.44
+          },
+          "p_real": 0.518,
+          "plan": "a a* a* a* a= a* a= a'"
+        },
+        {
+          "id": "evolved-07",
+          "label": "evolved",
+          "mid": "audio/007-repetition-fix/evolved-07.mid",
+          "source": "out/final_v7_form/cell_045_0.895.mid",
+          "fitness": 0.895,
+          "chords": "vi vi vi III iii III V V vi vi vi III iii III V V",
+          "desc": {
+            "density": 6.75,
+            "entropy": 3.85,
+            "range": 19,
+            "compression": 0.5
+          },
+          "p_real": 0.708,
+          "plan": "a a* a' a= a* a* b c"
+        },
+        {
+          "id": "evolved-08",
+          "label": "evolved",
+          "mid": "audio/007-repetition-fix/evolved-08.mid",
+          "source": "out/final_v7_form/cell_006_0.856.mid",
+          "fitness": 0.856,
+          "chords": "iii I I I I I vii\u00b0 vii\u00b0 bVII I I I I I vii\u00b0 vii\u00b0",
+          "desc": {
+            "density": 6.5,
+            "entropy": 4.0,
+            "range": 25,
+            "compression": 0.4
+          },
+          "p_real": 0.023,
+          "plan": "a b a' c c= b= a' d"
+        },
+        {
+          "id": "reference-01",
+          "label": "reference",
+          "mid": "audio/007-repetition-fix/reference-01.mid",
+          "source": "out/reference5/ref_abba_so-long.mid",
+          "fitness": null,
+          "chords": "I I bVII bVII IV IV IV IV I I bVII bVII IV IV IV IV",
+          "desc": {
+            "density": 5.0,
+            "entropy": 3.23,
+            "range": 4,
+            "compression": 0.4
+          },
+          "p_real": 0.707,
+          "credit": {
+            "text": "Abba \u2013 So Long (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/abba/so-long"
+          }
+        },
+        {
+          "id": "reference-02",
+          "label": "reference",
+          "mid": "audio/007-repetition-fix/reference-02.mid",
+          "source": "out/reference5/ref_adele_set-fire-to-the-rain.mid",
+          "fitness": null,
+          "chords": "ii ii vi vi I I V V ii ii vi vi I I V V",
+          "desc": {
+            "density": 4.5,
+            "entropy": 3.88,
+            "range": 11,
+            "compression": 0.42
+          },
+          "p_real": 0.78,
+          "credit": {
+            "text": "Adele \u2013 Set Fire To The Rain (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/adele/set-fire-to-the-rain"
+          }
+        },
+        {
+          "id": "reference-03",
+          "label": "reference",
+          "mid": "audio/007-repetition-fix/reference-03.mid",
+          "source": "out/reference5/ref_avicii_dear-boy.mid",
+          "fitness": null,
+          "chords": "IV V vi iii IV V iii vi IV V vi iii IV V I I",
+          "desc": {
+            "density": 5.38,
+            "entropy": 3.98,
+            "range": 23,
+            "compression": 0.47
+          },
+          "p_real": 0.691,
+          "credit": {
+            "text": "Avicii \u2013 Dear Boy (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/avicii/dear-boy"
+          }
+        },
+        {
+          "id": "reference-04",
+          "label": "reference",
+          "mid": "audio/007-repetition-fix/reference-04.mid",
+          "source": "out/reference5/ref_florence-and-the-machine_hunger.mid",
+          "fitness": null,
+          "chords": "I I IV IV vi vi V V V V IV IV vi vi V V",
+          "desc": {
+            "density": 5.62,
+            "entropy": 4.01,
+            "range": 27,
+            "compression": 0.51
+          },
+          "p_real": 0.815,
+          "credit": {
+            "text": "Florence And The Machine \u2013 Hunger (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/florence-and-the-machine/hunger"
+          }
+        }
+      ]
     }
   ]
 }
