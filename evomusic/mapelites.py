@@ -211,7 +211,8 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=Path("out/me"))
     ap.add_argument("--resume", type=Path, nargs="*", default=[], help="summary.json files whose pieces seed the archive (continue a lineage)")
     ap.add_argument("--centre-w", type=float, default=0.1, help="pull toward each cell's real-pop centre (CVT archives only)")
-    ap.add_argument("--novel-only", action="store_true", help="likelihood judges score only non-repeated bars")
+    ap.add_argument("--novel-only", action="store_true", help="the LM scores only non-repeated bars")
+    ap.add_argument("--amt-novel-only", action="store_true", help="the AMT scores only non-repeated bars (audit: biased against late repeats)")
     ap.add_argument("--agg", choices=["geo", "sum"], default="geo", help="how judges combine: geometric mean (soft AND) or weighted sum")
     a = ap.parse_args()
 
@@ -223,7 +224,7 @@ def main() -> None:
     # behaviour dimensions are the archive's axes, not targets: keep them out of the descriptor-band term
     exclude = tuple(cvt.dims) + ("parallel_rhythm", "parallel_contour", "distinct_chords") if cvt is not None else ()
     fitness = build(a.rules, a.ngram, 0.5, a.lm, a.lm_w, a.disc or None, a.disc_w, a.desc, a.desc_w, a.amt_w, desc_exclude=exclude,
-                    form_w=a.form_w, agg=a.agg, novel_only=a.novel_only)
+                    form_w=a.form_w, agg=a.agg, novel_only=a.novel_only, amt_novel_only=a.amt_novel_only)
 
     seeds = []
     for path in a.resume:

@@ -518,9 +518,19 @@ corruption (0.64) and stops punishing real phrases with natural repetition
 
 Repetition moved most of the way toward real pop; the repetition-aware grader
 agrees with Renaldas' earlier A/B choices 80 % of the time, the first judge
-clearly above chance. Run v8 (`scripts_final_v8.sh`, + novelty masking) and
-its AMT audit follow; the better of the two sets the site's Evolve / Produce
-defaults.
+clearly above chance.
+
+**Run v8** (v7 + novelty masking of LM *and* AMT): exact repeats 21 -> 14 %
+(real 15), same rhythm 8 -> 12 % (real 10), but new endings 15 -> 20 % (real
+13) and new material 49 -> 47 % (real 57): the surplus moved to varied endings,
+the next cheapest trick. Grader 3 AUC 0.76 (v7 0.67), AMT gap +0.05 (v7 +0.02):
+the independent judges place v8 slightly further from real. The audit with the
+masked AMT showed why: real phrases with 3+ late repeats score 0.45 vs 0.73 for
+the rest, because only their early, context-poor bars get scored. The LM's
+masking has no such bias (0.64 / 0.66 / 0.71). Decision: mask the LM only
+(`--novel-only`), keep the AMT unmasked (`--amt-novel-only` exists, off);
+**run v9** with that combination overnight; batch 007 (v7) stays unless v9 is
+clearly better on the same table.
 
 ## 8. Evaluation: how do we know it is working?
 
