@@ -1,6 +1,7 @@
 // Static front-end for docs/batches.json. No build step, no backend.
 const $ = (s) => document.querySelector(s);
 const KEY = "gc-ratings-v1";
+const PAIRS_PER_SESSION = 12;
 let DATA = { repo: "", batches: [] };
 let session = null; // { batch, rater, pairs, i }
 
@@ -17,7 +18,7 @@ async function init() {
   $("#rate-start").onclick = startSession;
   document.querySelectorAll(".choices button").forEach((b) => (b.onclick = () => choose(b.dataset.choice)));
   $("#pair-next").onclick = nextPair;
-  $("#submit-issue").onclick = submitIssue;
+  $("#mark-sent").onclick = () => { if (confirm("Clear the local copy of your ratings? Only do this after GitHub shows your new issue.")) { localStorage.removeItem(KEY); updateCount(); } };
   $("#download-json").onclick = downloadJson;
   $("#clear-ratings").onclick = () => { if (confirm("Delete unsent ratings?")) { localStorage.removeItem(KEY); updateCount(); } };
   if (location.hash === "#rate") showTab("rate");
@@ -67,8 +68,10 @@ function startSession() {
   // all unordered pairs, shuffled, random A/B side, capped at 20
   const pairs = [];
   for (let i = 0; i < batch.clips.length; i++) for (let j = i + 1; j < batch.clips.length; j++) pairs.push(Math.random() < 0.5 ? [i, j] : [j, i]);
-  session = { batch, rater, pairs: shuffle(pairs).slice(0, 20), i: 0 };
+  session = { batch, rater, pairs: shuffle(pairs).slice(0, PAIRS_PER_SESSION), i: 0 };
   $("#pair").hidden = false;
+  $("#pair-done").hidden = true;
+  document.querySelectorAll(".choices button").forEach((x) => (x.hidden = false));
   showPair();
 }
 
@@ -97,22 +100,32 @@ function choose(choice) {
 
 function nextPair() {
   session.i++;
-  if (session.i >= session.pairs.length) { $("#pair").hidden = true; alert("Batch done. Thank you! Now submit your ratings below."); return; }
+  if (session.i >= session.pairs.length) {
+    document.querySelectorAll(".choices button").forEach((x) => (x.hidden = true));
+    $("#pair-next").hidden = true; $("#pair-done").hidden = false;
+    $("#submit").scrollIntoView({ behavior: "smooth" });
+    return;
+  }
   showPair();
 }
 
-function updateCount() { $("#n-ratings").textContent = JSON.parse(localStorage.getItem(KEY) || "[]").length; }
-
-function submitIssue() {
+function updateCount() {
   const ratings = JSON.parse(localStorage.getItem(KEY) || "[]");
-  if (!ratings.length) return alert("No ratings yet.");
+  $("#n-ratings").textContent = ratings.length;
+  const link = $("#submit-link");
+  const url = ratings.length ? issueUrl(ratings) : "#";
+  const tooLong = url.length > 7500;
+  link.href = tooLong ? "#" : url;
+  link.classList.toggle("disabled", !ratings.length || tooLong);
+  link.textContent = tooLong ? "Too many ratings for one issue: use Download JSON" : "Open GitHub with my ratings ↗";
+  $("#mark-sent").disabled = !ratings.length;
+}
+
+function issueUrl(ratings) {
   const rater = localStorage.getItem("gc-rater") || "anon";
   const title = `ratings: ${rater} ${new Date().toISOString().slice(0, 10)} (${ratings.length})`;
   const body = "```json\n" + JSON.stringify(ratings) + "\n```";
-  const url = `https://github.com/${DATA.repo}/issues/new?labels=ratings&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
-  if (url.length > 7500) return alert("Too many ratings for one issue URL; use Download JSON instead.");
-  window.open(url, "_blank");
-  if (confirm("Did you press 'Submit new issue' on GitHub? OK clears the local copy.")) { localStorage.removeItem(KEY); updateCount(); }
+  return `https://github.com/${DATA.repo}/issues/new?labels=ratings&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
 }
 
 function downloadJson() {

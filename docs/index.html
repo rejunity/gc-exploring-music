@@ -43,13 +43,18 @@
         <button data-choice="B">B is better</button>
       </div>
       <button id="pair-next" hidden>Next pair →</button>
+      <p id="pair-done" class="done" hidden>Batch done, thank you! Now send your ratings below.</p>
     </div>
     <div id="submit" class="card">
       <p><b id="n-ratings">0</b> unsent ratings in this browser.</p>
-      <button id="submit-issue">Submit as GitHub issue</button>
-      <button id="download-json">Download JSON</button>
-      <button id="clear-ratings" class="danger">Clear</button>
-      <p class="hint">Submitting opens a prefilled issue on GitHub (you need a GitHub account). Press "Submit new issue" there. No account? Download the JSON and send it to Renaldas.</p>
+      <ol class="steps">
+        <li><a id="submit-link" class="button" href="#" target="_blank" rel="noopener">Open GitHub with my ratings ↗</a>
+            <span class="hint">A new tab opens with the issue already filled in. Press the green <b>Create</b> / <b>Submit new issue</b> button there.</span></li>
+        <li><button id="mark-sent">Mark as sent</button>
+            <span class="hint">Clears the local copy once GitHub shows your issue.</span></li>
+      </ol>
+      <p class="hint">No GitHub account? <button id="download-json">Download JSON</button> and send it to Renaldas.
+        <button id="clear-ratings" class="danger">Discard ratings</button></p>
     </div>
   </section>
 </main>

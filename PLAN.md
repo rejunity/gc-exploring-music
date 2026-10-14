@@ -200,7 +200,7 @@ Two options, in order of effort:
   `uv run evomusic pull-ratings` command runs `gh issue list --label ratings
   --json body`, parses the JSON, and feeds the Bradley-Terry fit; processed
   issues are closed. Fallback: "download my ratings as JSON". Keep batches to
-  ~20 pairs so a session fits a coffee break.
+  12 pairs so a session fits a coffee break.
 - **Playback is from the `.mid` files directly in the browser** (decided
   2026-10-13 to keep the repo small): `html-midi-player` (Magenta) from the
   jsDelivr CDN, with Magenta's SGM Plus soundfont streamed from Google's CDN on

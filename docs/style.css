@@ -35,3 +35,10 @@ button.danger { color:#c0392b; }
 .hint { color:var(--muted); font-size:.85rem; }
 footer { color:var(--muted); font-size:.85rem; padding:24px 16px; }
 @media (max-width:600px) { .ab { grid-template-columns:1fr; } }
+a.button { display:inline-block; padding:8px 14px; border-radius:8px; border:1px solid var(--accent); background:var(--accent); color:#fff; text-decoration:none; }
+a.button.disabled { pointer-events:none; opacity:.45; }
+.steps { padding-left: 20px; }
+.steps li { margin: 8px 0; }
+.steps .hint { display:block; margin-top:4px; }
+.done { text-align:center; font-weight:600; }
+button:disabled { opacity:.45; cursor:default; }
