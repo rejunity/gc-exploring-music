@@ -109,19 +109,32 @@ SPACES = {"notes": NoteSpace, "form": FormSpace}
 # ----------------------------------------------------------------------------- the algorithm
 
 def run(fitness, iters: int, batch: int, bins: int, seed: int, init: int,
-        log=lambda *a: print(*a, flush=True), seeds: list | None = None, space=None, cell_fn=None):
-    """Returns {cell: (fitness, genotype)}. Defaults (notes genome, 2-D grid) keep the old behaviour."""
+        log=lambda *a: print(*a, flush=True), seeds: list | None = None, space=None, cell_fn=None,
+        cvt=None, centre_w: float = 0.0):
+    """Returns {cell: (fitness, genotype)}. Defaults (notes genome, 2-D grid) keep the old behaviour.
+
+    With a CVT archive and centre_w > 0, pieces compete within a cell on
+    fitness - centre_w * distance-to-centroid: elites are pulled toward where real pop
+    is densest instead of drifting to whichever corner of the cell a biased judge likes."""
     space = space or NoteSpace()
+    if cvt is not None:
+        cell_fn = cvt.cell
     cell_fn = cell_fn or (lambda g: cell(g, bins))
     rng = random.Random(seed)
     archive: dict = {}
+    keyed: dict = {}                                  # cell -> competition key
 
     def insert(xs):
         ph = [space.pheno(x) for x in xs]
         fs = fitness.score_all(ph)
         for x, g, f in zip(xs, ph, fs):
-            c = cell_fn(g)
-            if c not in archive or f > archive[c][0]:
+            if cvt is not None and centre_w:
+                c, d = cvt.cell_and_distance(g)
+                key = f - centre_w * d
+            else:
+                c, key = cell_fn(g), f
+            if c not in keyed or key > keyed[c]:
+                keyed[c] = key
                 archive[c] = (f, x)
 
     insert((seeds or []) + [space.random(rng) for _ in range(init)])
@@ -149,7 +162,10 @@ def export(archive, fitness, out: Path, bins: int, space=None, cvt=None) -> dict
     from evomusic.form import from_genome
     space = space or NoteSpace()
     out.mkdir(parents=True, exist_ok=True)
-    best_c = max(archive, key=lambda c: archive[c][0])
+    # the star: best fitness among pieces inside real pop's p10..p90 on every behaviour axis
+    # (the global best tends to sit where a biased judge pushed it); fallback: global best
+    typical = [c for c, (f, x) in archive.items() if cvt is None or cvt.typical(space.pheno(x))]
+    best_c = max(typical or archive, key=lambda c: archive[c][0])
     cells = []
     for c, (f, x) in sorted(archive.items()):
         g = space.pheno(x)
@@ -190,10 +206,12 @@ def main() -> None:
     ap.add_argument("--lm-w", type=float, default=1.0)
     ap.add_argument("--desc", type=Path, help="descriptor bands json (fitness.descriptors fit)")
     ap.add_argument("--desc-w", type=float, default=2.0)
-    ap.add_argument("--form-w", type=float, default=0.0, help="weight of the form-likelihood term (bar-by-bar plan vs real pop)")
+    ap.add_argument("--form-w", type=float, default=0.0, help="deprecated: form-likelihood term (penalises the most common real plan)")
     ap.add_argument("--amt-w", type=float, default=0.0, help="Anticipatory Music Transformer term weight (GPU, ~15 genomes/s)")
     ap.add_argument("--out", type=Path, default=Path("out/me"))
     ap.add_argument("--resume", type=Path, nargs="*", default=[], help="summary.json files whose pieces seed the archive (continue a lineage)")
+    ap.add_argument("--centre-w", type=float, default=0.1, help="pull toward each cell's real-pop centre (CVT archives only)")
+    ap.add_argument("--agg", choices=["geo", "sum"], default="geo", help="how judges combine: geometric mean (soft AND) or weighted sum")
     a = ap.parse_args()
 
     space = SPACES[a.genome]()
@@ -204,7 +222,7 @@ def main() -> None:
     # behaviour dimensions are the archive's axes, not targets: keep them out of the descriptor-band term
     exclude = tuple(cvt.dims) + ("parallel_rhythm", "parallel_contour", "distinct_chords") if cvt is not None else ()
     fitness = build(a.rules, a.ngram, 0.5, a.lm, a.lm_w, a.disc or None, a.disc_w, a.desc, a.desc_w, a.amt_w, desc_exclude=exclude,
-                    form_w=a.form_w)
+                    form_w=a.form_w, agg=a.agg)
 
     seeds = []
     for path in a.resume:
@@ -215,7 +233,7 @@ def main() -> None:
     if seeds:
         print(f"resuming from {len(seeds)} pieces", flush=True)
     archive = run(fitness, a.iters, a.batch, a.bins, a.seed, a.init, seeds=seeds, space=space,
-                  cell_fn=cvt.cell if cvt is not None else None)
+                  cvt=cvt, centre_w=a.centre_w)
     s = export(archive, fitness, a.out, a.bins, space, cvt)
     print("star:", s["star"], {k: round(v, 3) for k, v in s["star_breakdown"].items()})
 

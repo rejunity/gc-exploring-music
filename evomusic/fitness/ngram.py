@@ -8,11 +8,12 @@ Three streams:
   melody : token = (interval class from previous note | REST | START, duration)   n = 4
   chords : token = chord index                                                       n = 3
   chord_tone : token = (pitch class relative to current chord root, strong beat?) n = 1
-Fitness = mean per-token log-likelihood scored against the *band* of values
-real (held-out) music occupies: 1.0 inside [p10, p90], decaying linearly to 0
-one band-width outside on either side. Being *more* predictable than real
-music is penalised just like being less predictable, which stops the GA from
-converging on the single most probable cliché.
+Fitness = mean per-token log-likelihood scored against the distribution of
+real (held-out) music: 1 at the real median, 0.85 at p25 / p75, 0 at p5 / p95.
+Being *more* predictable than real music is penalised just like being less
+predictable, which stops the GA from converging on the single most probable
+cliché; the peak (rather than a flat band) keeps a preference for typical
+values, so a biased judge cannot decide the direction inside the band.
 """
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from evomusic.fitness import as5, band_peak, quantiles5
 from evomusic.genome import CHORDS, Genome
 
 _D = 0.75  # absolute discount
@@ -118,8 +120,7 @@ class CorpusModel:
         scale = {}
         for name, (fn, _) in STREAMS.items():
             lp = [models[name].logprob(fn(g)) for g in (calib or genomes)]
-            q = st.quantiles(lp, n=10)
-            scale[name] = (q[0], q[8])          # p10, p90 of real music
+            scale[name] = quantiles5(lp)        # p5, p25, p50, p75, p95 of real music
         return cls(models, scale)
 
     def band(self, name: str) -> tuple[float, float]:
@@ -129,18 +130,12 @@ class CorpusModel:
         return {name: self.models[name].logprob(fn(g)) for name, (fn, _) in STREAMS.items()}
 
     def term(self, name: str):
-        """A [0,1] fitness term for one stream: 1 inside the real-music band [p10, p90],
-        linear decay to 0 one band-width outside on either side."""
+        """A [0,1] fitness term for one stream: peak at the real-music median log-likelihood,
+        0.85 at p25 / p75, 0 at p5 / p95 (see fitness.band_peak)."""
         fn = STREAMS[name][0]
-        lo, hi = self.scale[name]
-        width = hi - lo
+        q = as5(self.scale[name])
         def f(g: Genome) -> float:
-            x = self.models[name].logprob(fn(g))
-            if x < lo:
-                return max(0.0, 1 - (lo - x) / width)
-            if x > hi:
-                return max(0.0, 1 - (x - hi) / width)
-            return 1.0
+            return band_peak(self.models[name].logprob(fn(g)), *q)
         f.__name__ = f"ngram_{name}"
         return f
 
@@ -162,7 +157,7 @@ def main(argv: list[str]) -> None:
         valid = [g for g in gs if g.meta.get("split") == "VALID"] or None
         m = CorpusModel.fit(train, valid)
         m.save(Path(argv[2]))
-        print(f"fitted on {len(train)} genomes, band from {len(valid or [])} held-out; (p10, p90):",
+        print(f"fitted on {len(train)} genomes, quantiles from {len(valid or [])} held-out; (p5, p25, p50, p75, p95):",
               {k: tuple(round(x, 2) for x in v) for k, v in m.scale.items()})
     elif cmd == "score":
         m = CorpusModel.load(Path(argv[1]))

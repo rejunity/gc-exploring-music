@@ -62,8 +62,8 @@ class AMTTerm:
     """Fitness term from AMT likelihood, density-matched and band-scored.
 
     residual = NLL - median real NLL of the same density bucket (calibrated on VALID windows).
-    Score 1 inside the real residual p25..p75, linear decay to 0 at p5 / p95: rewards being as
-    natural as typical real music, not the single most predictable continuation.
+    Score peaks at the real residual median, 0.85 at p25 / p75, 0 at p5 / p95: rewards being
+    as natural as typical real music, not the single most predictable continuation.
     """
 
     def __init__(self, grader: AMTGrader, calib: list[Genome]):
@@ -74,21 +74,17 @@ class AMTTerm:
         for lo, hi in DENSITY_BUCKETS:
             xs = [x for c, x in zip(calib, nll) if lo <= _density(c) < hi]
             self.med[(lo, hi)] = st.median(xs) if xs else st.median(nll)
+        from evomusic.fitness import quantiles5
         res = [x - self._m(c) for c, x in zip(calib, nll)]
-        q = st.quantiles(res, n=20)
-        self.q = (q[0], q[4], q[14], q[18])
+        self.q = quantiles5(res)
 
     def _m(self, g: Genome) -> float:
         d = _density(g)
         return next(v for (lo, hi), v in self.med.items() if lo <= d < hi)
 
     def _score(self, r: float) -> float:
-        q5, q25, q75, q95 = self.q
-        if q25 <= r <= q75:
-            return 1.0
-        if r < q25:
-            return max(0.0, (r - q5) / (q25 - q5))
-        return max(0.0, (q95 - r) / (q95 - q75))
+        from evomusic.fitness import band_peak
+        return band_peak(r, *self.q)
 
     def batch(self, gs: list[Genome]) -> list[float]:
         return [self._score(x - self._m(g)) for g, x in zip(gs, self.g.nll(gs))]

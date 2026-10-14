@@ -1,8 +1,8 @@
 """Descriptor-matching fitness: pull a genome's complexity / structure descriptors
 into the range real music occupies.
 
-Each descriptor scores 1 inside the real p25..p75 band and decays linearly to 0
-at p5 / p95. The term is the mean over descriptors. MAP-Elites axes are left
+Each descriptor scores 1 at the real median, 0.85 at p25 / p75 and 0 at p5 / p95
+(fitness.band_peak). The term is the mean over descriptors. MAP-Elites axes are left
 out (they are the knobs, not targets).
 
     uv run python -m evomusic.fitness.descriptors fit data/processed/desc_bands.json
@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 from evomusic.complexity import compression, entropy_rate, symbol_entropy
+from evomusic.fitness import as5, band_peak, quantiles5
 from evomusic.genome import Genome
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -87,12 +88,8 @@ def cheap_descriptors(g: Genome) -> dict[str, float]:
     }
 
 
-def _score(x: float, q5: float, q25: float, q75: float, q95: float) -> float:
-    if q25 <= x <= q75:
-        return 1.0
-    if x < q25:
-        return max(0.0, (x - q5) / (q25 - q5)) if q25 > q5 else float(x >= q25)
-    return max(0.0, (q95 - x) / (q95 - q75)) if q95 > q75 else float(x <= q75)
+def _score(x: float, *q) -> float:
+    return band_peak(x, *as5(q))
 
 
 def term(bands_path: Path = ROOT / "data/processed/desc_bands.json", exclude: tuple = ()):
@@ -112,13 +109,10 @@ def main(argv: list[str]) -> None:
         sys.exit(__doc__)
     real = real_windows("TRAIN", 4)
     ds = [cheap_descriptors(g) for g in real]
-    bands = {}
-    for k in ds[0]:
-        q = st.quantiles([d[k] for d in ds], n=20)
-        bands[k] = (q[0], q[4], q[14], q[18])          # p5, p25, p75, p95
+    bands = {k: quantiles5([d[k] for d in ds]) for k in ds[0]}        # p5, p25, p50, p75, p95
     Path(argv[1]).write_text(json.dumps(bands, indent=1))
     for k, v in bands.items():
-        print(f"{k:16s} p5 {v[0]:7.3f}  p25 {v[1]:7.3f}  p75 {v[2]:7.3f}  p95 {v[3]:7.3f}")
+        print(f"{k:16s} p5 {v[0]:7.3f}  p25 {v[1]:7.3f}  p50 {v[2]:7.3f}  p75 {v[3]:7.3f}  p95 {v[4]:7.3f}")
     f = term(Path(argv[1]))
     print("mean term on real TRAIN windows:", round(st.mean(f(g) for g in real[:3000]), 3))
 

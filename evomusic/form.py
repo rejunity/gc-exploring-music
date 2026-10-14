@@ -385,6 +385,76 @@ def plan_term(path: Path = PLAN_MODEL_PATH):
     return f
 
 
+# ---------------------------------------------------------------------------- corpus-sampled motifs
+
+_SAMPLER = None
+
+
+def melody_sampler(path: Path = ROOT / "data/processed/ngram_hooktheory.json"):
+    """A function rng -> one bar of (rel_degree | None, chroma, dur) genes, sampled from the
+    corpus melody n-gram model (interval, duration tokens). Makes a plausible *new* bar as
+    cheap for evolution as repeating an old one. Falls back to the random walk if the model
+    file is missing."""
+    global _SAMPLER
+    if _SAMPLER is None:
+        if not path.exists():
+            _SAMPLER = False
+        else:
+            from evomusic.fitness.ngram import CorpusModel
+            model = CorpusModel.load(path).models["melody"]
+            vocab = sorted(model.vocab, key=str)
+            n = model.n
+
+            def sample(rng: random.Random, steps: int = STEPS_PER_BAR) -> list:
+                ctx = ["<s>"] * (n - 1)
+                t, pitch, out = 0, 60, []
+                while t < steps:
+                    cands = [v for v in vocab if isinstance(v, tuple) and v[1] <= steps - t and (out or v[0] != "R" or rng.random() < 0.3)]
+                    if not cands:
+                        break
+                    ws = [model.prob(tuple(ctx), v) for v in cands]
+                    tok = rng.choices(cands, weights=ws)[0]
+                    iv, d = tok
+                    if iv == "R":
+                        out.append((None, d))
+                    else:
+                        if iv != "S":
+                            pitch = max(48, min(84, pitch + iv))
+                        out.append((pitch, d))
+                    t += d
+                    ctx = ctx[1:] + [tok]
+                if not out or all(p is None for p, _ in out):
+                    return None
+                return _rel_bar(fit16_abs(out), 4)[1]
+
+            _SAMPLER = sample
+    return _SAMPLER or None
+
+
+def fit16_abs(bar: list) -> list:
+    """Absolute (pitch, dur) genes forced to one bar."""
+    t, out = 0, []
+    for p, d in bar:
+        if t >= STEPS_PER_BAR:
+            break
+        d = min(d, STEPS_PER_BAR - t)
+        out.append((p, d)); t += d
+    if t < STEPS_PER_BAR:
+        p, d = out[-1]
+        out[-1] = (p, d + STEPS_PER_BAR - t)
+    return out
+
+
+def new_motif(rng: random.Random, stats: dict) -> list:
+    """A fresh 1-bar motif: from the corpus n-gram sampler (70 %) or the statistical random walk."""
+    sampler = melody_sampler()
+    if sampler and rng.random() < 0.7:
+        m = sampler(rng)
+        if m:
+            return fit16(m)
+    return random_genes(rng, STEPS_PER_BAR, stats)
+
+
 # ---------------------------------------------------------------------------- random forms
 
 def random_genes(rng: random.Random, steps: int, stats: dict, start: int = 0, lead_rest: bool = True) -> list:
@@ -434,7 +504,7 @@ def instantiate(tokens: list[str], rng: random.Random, stats: dict, motifs: list
         if L not in letter_to:
             k = len(letter_to)
             if k >= len(motifs):
-                motifs.append(random_genes(rng, STEPS_PER_BAR, stats))
+                motifs.append(new_motif(rng, stats))
             letter_to[L] = k
             anchor = prev if i == 0 else max(A_LO, min(A_HI, prev + _sample(rng, stats["new_anchor_step"])))
             base[L] = anchor
@@ -507,7 +577,7 @@ def _motif_op(x: FormGenome, rng: random.Random, op: str, stats: dict, frozen: f
     elif op == "m_retro":
         m = list(reversed(m))
     elif op == "m_new":
-        m = random_genes(rng, STEPS_PER_BAR, stats)
+        m = new_motif(rng, stats)
     x.motifs[mi] = fit16(m)
 
 
@@ -547,11 +617,14 @@ def _slot_op(x: FormGenome, rng: random.Random, op: str, stats: dict) -> None:
             s.op, s.param = "copy", None
     elif op == "s_ref" and i > 0:
         if rng.random() < 0.3:
-            x.motifs.append(random_genes(rng, STEPS_PER_BAR, stats))
+            x.motifs.append(new_motif(rng, stats))
             s.motif = len(x.motifs) - 1
         else:
             s.motif = rng.randrange(len(x.motifs))
         s.op, s.param = "copy", None
+    elif op == "s_fresh" and i > 0:                       # new material: a corpus-sampled motif in this bar
+        x.motifs.append(new_motif(rng, stats))
+        s.motif, s.op, s.param = len(x.motifs) - 1, "copy", None
     elif op == "s_tail" and s.op == "vary":
         sp, tail = s.param
         if rng.random() < 0.5 and tail:
@@ -589,13 +662,13 @@ def _chord_op(x: FormGenome, rng: random.Random, op: str) -> None:
 
 MUTATIONS = {
     "m_pitch": 3, "m_split": 1.5, "m_merge": 1.5, "m_nudge": 1, "m_rest": 0.7, "m_invert": 0.2, "m_retro": 0.2, "m_new": 0.4,
-    "s_anchor": 1.2, "s_transpose_motif": 0.8, "s_op": 1.2, "s_ref": 0.8, "s_tail": 1, "s_degrees": 0.6, "s_frag": 0.3,
+    "s_anchor": 1.2, "s_transpose_motif": 0.8, "s_op": 1.2, "s_ref": 0.8, "s_fresh": 1.0, "s_tail": 1, "s_degrees": 0.6, "s_frag": 0.3,
     "p_resample": 0.3, "p_swap": 0.3, "p_register": 0.2,
     "c_change": 2, "c_copy": 0.8, "c_phrase": 0.4, "c_harmonize": 1.2,
 }
 
 
-PLAN_OPS = {"s_op", "s_ref", "p_resample", "p_swap"}
+PLAN_OPS = {"s_op", "s_ref", "s_fresh", "p_resample", "p_swap"}
 CHORD_OPS = {"c_change", "c_copy", "c_phrase", "c_harmonize"}
 
 
@@ -603,7 +676,7 @@ def mutation_weights(keep: set[str] = frozenset(), boost_structure: float = 1.0)
     """Operator weights honouring keep = {"hook", "plan", "harmony"}; boost_structure > 1 favours
     big moves (new plans, new motifs, re-pointed slots) for wide exploration."""
     w = dict(MUTATIONS)
-    for k in ("p_resample", "m_new", "s_ref", "s_op"):
+    for k in ("p_resample", "m_new", "s_ref", "s_fresh", "s_op"):
         w[k] *= boost_structure
     if "plan" in keep:
         for k in PLAN_OPS:

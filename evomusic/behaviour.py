@@ -1,6 +1,6 @@
 """Behaviour space shaped by real pop (CVT-MAP-Elites).
 
-Each piece gets a 9-D behaviour vector:
+Each piece gets a 10-D behaviour vector:
 
   notes_per_bar    density
   symbol_entropy   melodic variety
@@ -8,6 +8,9 @@ Each piece gets a 9-D behaviour vector:
   climax_pos       where the highest note sits (0 = first bar, 1 = last)
   distinct_motifs  how many different bar-motifs the form parser finds
   exact_share      share of bars that literally repeat an earlier bar
+  rhythm_share     share of bars whose onset rhythm already occurred in an earlier bar
+                   (exact repeats, sequences and same-rhythm variations all count:
+                   "one trick repeated with variation")
   four_chord_share share of half-bars on I / IV / V / vi (and their 7th / sus forms)
   minor_share      share of half-bars on minor chords (mood)
   chord_changes    harmonic rhythm
@@ -34,7 +37,7 @@ from evomusic.genome import CHORDS, Genome
 
 ROOT = Path(__file__).resolve().parent.parent
 CVT_PATH = ROOT / "data" / "cvt_hooktheory.json"
-DIMS = ["notes_per_bar", "symbol_entropy", "period_echo", "climax_pos", "distinct_motifs", "exact_share",
+DIMS = ["notes_per_bar", "symbol_entropy", "period_echo", "climax_pos", "distinct_motifs", "exact_share", "rhythm_share",
         "four_chord_share", "minor_share", "chord_changes"]
 FOUR = {"I", "IV", "V", "vi", "Imaj7", "IVmaj7", "V7", "vi7", "Isus4", "Vsus4"}
 MINOR = {"ii", "iii", "vi", "ii7", "vi7", "iv"}
@@ -44,9 +47,12 @@ def behaviour(g: Genome) -> dict[str, float]:
     from evomusic.complexity import symbol_entropy
     from evomusic.fitness.descriptors import form
     from evomusic.form import from_genome
+    from evomusic.fitness.descriptors import _bar_rhythm
     f = form(g)
     fg, toks = from_genome(g)
     names = [CHORDS[c].name for c in g.chords]
+    rhythms = [_bar_rhythm(b) for b in g.bar_genes()]
+    rhythm_rep = sum(r in rhythms[:i] for i, r in enumerate(rhythms)) / len(rhythms)
     return {
         "notes_per_bar": len(g.pitches()) / g.bars,
         "symbol_entropy": symbol_entropy(g),
@@ -54,6 +60,7 @@ def behaviour(g: Genome) -> dict[str, float]:
         "climax_pos": f["climax_pos"],
         "distinct_motifs": float(len(fg.motifs)),
         "exact_share": sum(t.endswith("=") for t in toks) / len(toks),
+        "rhythm_share": rhythm_rep,
         "four_chord_share": sum(n in FOUR for n in names) / len(names),
         "minor_share": sum(n in MINOR for n in names) / len(names),
         "chord_changes": sum(a != b for a, b in zip(g.chords, g.chords[1:])) / (len(g.chords) - 1),
@@ -66,6 +73,7 @@ class CVT:
         self.dims = d["dims"]
         self.mean, self.std = np.array(d["mean"]), np.array(d["std"])
         self.centroids, self.weights = np.array(d["centroids"]), d["weights"]
+        self.p10, self.p90 = np.array(d.get("p10", self.mean - 1.3 * self.std)), np.array(d.get("p90", self.mean + 1.3 * self.std))
 
     def vec(self, g: Genome) -> np.ndarray:
         b = behaviour(g)
@@ -73,6 +81,20 @@ class CVT:
 
     def cell(self, g: Genome) -> int:
         return int(np.argmin(((self.centroids - self.vec(g)) ** 2).sum(1)))
+
+    def cell_and_distance(self, g: Genome) -> tuple[int, float]:
+        """Nearest cell and the distance to its centroid, in z-score units per dimension
+        (root-mean-square over dimensions, so ~1 means one standard deviation off)."""
+        v = self.vec(g)
+        d2 = ((self.centroids - v) ** 2).sum(1)
+        c = int(np.argmin(d2))
+        return c, float(np.sqrt(d2[c] / len(self.dims)))
+
+    def typical(self, g: Genome) -> bool:
+        """Inside the real p10..p90 range on every dimension."""
+        b = behaviour(g)
+        x = np.array([b[k] for k in self.dims])
+        return bool(np.all((x >= self.p10 - 1e-9) & (x <= self.p90 + 1e-9)))
 
     def __len__(self) -> int:
         return len(self.centroids)
@@ -102,7 +124,8 @@ def fit(k: int = 128, out: Path = CVT_PATH) -> dict:
     mean, std = B.mean(0), B.std(0) + 1e-9
     C, counts = kmeans((B - mean) / std, k)
     d = {"dims": DIMS, "mean": mean.tolist(), "std": std.tolist(), "centroids": C.tolist(),
-         "weights": (counts / counts.sum()).tolist(), "n_real": len(real)}
+         "weights": (counts / counts.sum()).tolist(), "n_real": len(real),
+         "p10": np.percentile(B, 10, axis=0).tolist(), "p90": np.percentile(B, 90, axis=0).tolist()}
     out.write_text(json.dumps(d))
     return d
 

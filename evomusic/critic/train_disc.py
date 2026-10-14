@@ -97,8 +97,44 @@ def _thin(g, rng):
     return Genome.from_bars(out, g.chords)
 
 
+def _period_copy(g, rng):
+    b = g.bar_genes()
+    return Genome.from_bars(b[:4] + b[:4], g.chords[:8] + g.chords[:8])
+
+
+def _loop(g, rng):
+    """1- or 2-bar loop over the whole phrase, sometimes with the last bar varied (a cadence)."""
+    b = g.bar_genes()
+    k = rng.choice([1, 2, 2])
+    bars = (b[:k] * 8)[:8]
+    if rng.random() < 0.4:
+        bars[-1] = rng.choice(b)
+    return Genome.from_bars(bars, (g.chords[:2 * k] * 8)[:16])
+
+
+def _dup_bars(g, rng):
+    b = g.bar_genes()
+    for _ in range(rng.choice([2, 3, 4])):
+        i, j = rng.sample(range(8), 2)
+        b[j] = list(b[i])
+    return Genome.from_bars(b, g.chords)
+
+
+def _seq_spam(g, rng):
+    """One motif (bar 1) in every bar, moved a scale step up or down each time."""
+    from evomusic.form import FormGenome, Slot, from_genome
+    fg = from_genome(g.canonical())[0]
+    a0 = fg.plan[0].anchor
+    ks = [0] + [rng.choice([-2, -1, 1, 2]) for _ in range(7)]
+    plan = [Slot(fg.plan[0].motif, "copy", max(-4, min(14, a0 + k))) for k in ks]
+    return FormGenome(fg.motifs, plan, list(g.chords)).gc().to_genome()
+
+
+# Over-repetition families ("period_copy", "loop", "dup_bars", "seq_spam") were added after the
+# audit showed the discriminators rewarding repetition without limit: every earlier fake had
+# less repetition than real music, so "repeats, therefore real" was a reliable shortcut.
 FAMILIES = ["mut1", "mut3", "mut8", "pitch_noise", "bar_shuffle", "chord_shuffle", "swap", "random", "random_scale",
-            "half_swap", "thin"]
+            "half_swap", "thin", "period_copy", "loop", "dup_bars", "seq_spam"]
 
 
 def make_fake(kind: str, reals: list[Genome], rng: random.Random) -> Genome:
@@ -120,6 +156,14 @@ def make_fake(kind: str, reals: list[Genome], rng: random.Random) -> Genome:
         return _chord_shuffle(g, rng)
     if kind == "swap":
         return _swap(g, rng.choice(reals), rng)
+    if kind == "period_copy":
+        return _period_copy(g, rng)
+    if kind == "loop":
+        return _loop(g, rng)
+    if kind == "dup_bars":
+        return _dup_bars(g, rng)
+    if kind == "seq_spam":
+        return _seq_spam(g, rng)
     if kind == "half_swap":
         return _half_swap(g, rng.choice(reals), rng)
     if kind == "thin":

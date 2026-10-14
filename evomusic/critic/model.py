@@ -105,16 +105,10 @@ class Critic:
 
     # ---- fitness terms -----------------------------------------------------
     def lm_term(self):
-        if "quantiles" in self.lm_meta:                    # p5, p25, p75, p95 of held-out real NLL
-            q5, q25, q75, q95 = self.lm_meta["quantiles"]
-        else:
-            lo, hi = self.lm_meta["band"]; q5, q25, q75, q95 = lo - (hi - lo) / 4, lo, hi, hi + (hi - lo) / 4
-        def score(x: float) -> float:
-            if q25 <= x <= q75:
-                return 1.0
-            if x < q25:
-                return max(0.0, (x - q5) / (q25 - q5))
-            return max(0.0, (q95 - x) / (q95 - q75))
+        from evomusic.fitness import as5, band_peak
+        q = as5(self.lm_meta.get("quantiles5") or self.lm_meta.get("quantiles") or self.lm_meta["band"])
+        def score(x: float) -> float:                     # peak at the real median NLL, 0 at p5 / p95
+            return band_peak(x, *q)
         f = lambda g: score(self.nll([g])[0])
         f.batch = lambda gs: [score(x) for x in self.nll(gs)]
         f.__name__ = "critic_lm"

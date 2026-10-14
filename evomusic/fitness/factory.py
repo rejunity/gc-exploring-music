@@ -14,8 +14,8 @@ from evomusic.fitness.rules import default_rules
 def build(rules: float = 1.0, ngram: Path | None = None, ngram_w: float = 0.5,
           lm: Path | None = None, lm_w: float = 1.0, disc: Path | list[Path] | None = None, disc_w: float = 4.0,
           desc: Path | None = None, desc_w: float = 2.0, amt_w: float = 0.0, desc_exclude: tuple = (),
-          form_w: float = 0.0) -> Composite:
-    f = Composite()
+          form_w: float = 0.0, agg: str = "geo") -> Composite:
+    f = Composite(agg=agg)
     if form_w:
         from evomusic.form import plan_term
         f.add("form_plan", form_w, plan_term())
