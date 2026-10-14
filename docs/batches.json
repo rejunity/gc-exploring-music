@@ -760,6 +760,218 @@
           }
         }
       ]
+    },
+    {
+      "id": "006-form-genome",
+      "title": "Hook-and-form genome vs flat notes vs real pop (blind test)",
+      "notes": "Step 2: archive cells placed where real pop lives (8 dimensions incl. phrase echo, climax position, number of motifs, harmony), clips sampled by how common their region is in real pop. Step 3: 'form' pieces are built from motifs + a phrase plan + transformations (repeat, sequence, new ending, same rhythm, fragment), plans mined from 17k real pop phrases; 'notes' is the old flat genome on the same archive. Same fitness for both (rules, corpus bands, small critic, AMT). 'reference' = mainstream pop excerpts. Each clip shows its phrase plan.",
+      "date": "2026-10-14",
+      "clips": [
+        {
+          "id": "form-01",
+          "label": "form",
+          "mid": "audio/006-form-genome/form-01.mid",
+          "source": "out/final_v5_form/star_050_0.975.mid",
+          "fitness": 0.975,
+          "chords": "IV IV IV IV IV IV IV vi IV IV IV IV IV IV IV vi",
+          "desc": {
+            "density": 5.12,
+            "entropy": 3.75,
+            "range": 15,
+            "compression": 0.39
+          },
+          "p_real": 0.836,
+          "plan": "a b c d e ef e= e*"
+        },
+        {
+          "id": "form-02",
+          "label": "form",
+          "mid": "audio/006-form-genome/form-02.mid",
+          "source": "out/final_v5_form/cell_098_0.953.mid",
+          "fitness": 0.953,
+          "chords": "iii iii V V iii iii iii iii iii V V V iii iii iii iii",
+          "desc": {
+            "density": 3.25,
+            "entropy": 3.48,
+            "range": 18,
+            "compression": 0.42
+          },
+          "p_real": 0.794,
+          "plan": "a a~ a~ a~ a* a* a~ a'"
+        },
+        {
+          "id": "form-03",
+          "label": "form",
+          "mid": "audio/006-form-genome/form-03.mid",
+          "source": "out/final_v5_form/cell_101_0.968.mid",
+          "fitness": 0.968,
+          "chords": "IV IV IV IV IV IV IV vi IV IV V V iii iii iii iii",
+          "desc": {
+            "density": 6.25,
+            "entropy": 4.23,
+            "range": 15,
+            "compression": 0.44
+          },
+          "p_real": 0.733,
+          "plan": "a b a= c d d= d= d*"
+        },
+        {
+          "id": "form-04",
+          "label": "form",
+          "mid": "audio/006-form-genome/form-04.mid",
+          "source": "out/final_v5_form/cell_059_0.961.mid",
+          "fitness": 0.961,
+          "chords": "IV IV IV IV IV IV IV vi IV IV IV IV IV IV IV vi",
+          "desc": {
+            "density": 4.12,
+            "entropy": 3.5,
+            "range": 16,
+            "compression": 0.47
+          },
+          "p_real": 0.786,
+          "plan": "a a~ a~ a* a* a~ a~ a'"
+        },
+        {
+          "id": "notes-01",
+          "label": "notes",
+          "mid": "audio/006-form-genome/notes-01.mid",
+          "source": "out/final_v5_notes/star_072_0.925.mid",
+          "fitness": 0.925,
+          "chords": "vi7 iii III III vi iii vi vi iii iii vii\u00b0 IV vi vi iii iii",
+          "desc": {
+            "density": 6.75,
+            "entropy": 3.83,
+            "range": 17,
+            "compression": 0.43
+          },
+          "p_real": 0.095,
+          "plan": "a a* b b* a= a* a= a="
+        },
+        {
+          "id": "notes-02",
+          "label": "notes",
+          "mid": "audio/006-form-genome/notes-02.mid",
+          "source": "out/final_v5_notes/cell_100_0.756.mid",
+          "fitness": 0.756,
+          "chords": "Vsus4 V7 I Imaj7 Imaj7 Imaj7 vi vi vii\u00b0 vii\u00b0 vii\u00b0 vii\u00b0 V V V I",
+          "desc": {
+            "density": 5.38,
+            "entropy": 3.41,
+            "range": 16,
+            "compression": 0.36
+          },
+          "p_real": 0.036,
+          "plan": "a a= b a= a' b' c a="
+        },
+        {
+          "id": "notes-03",
+          "label": "notes",
+          "mid": "audio/006-form-genome/notes-03.mid",
+          "source": "out/final_v5_notes/cell_106_0.806.mid",
+          "fitness": 0.806,
+          "chords": "vi7 V7 III III vi vi vi vi vi7 V7 III III vi vi vi vi",
+          "desc": {
+            "density": 6.88,
+            "entropy": 3.58,
+            "range": 16,
+            "compression": 0.43
+          },
+          "p_real": 0.673,
+          "plan": "a b a= c a= b* b' d"
+        },
+        {
+          "id": "notes-04",
+          "label": "notes",
+          "mid": "audio/006-form-genome/notes-04.mid",
+          "source": "out/final_v5_notes/cell_064_0.765.mid",
+          "fitness": 0.765,
+          "chords": "Vsus4 V7 bVI Vsus4 Imaj7 Imaj7 vi vi Vsus4 V7 bVI IV Imaj7 vi bVI vi",
+          "desc": {
+            "density": 4.62,
+            "entropy": 3.6,
+            "range": 16,
+            "compression": 0.4
+          },
+          "p_real": 0.223,
+          "plan": "a b b* c a= b* b* b*"
+        },
+        {
+          "id": "reference-01",
+          "label": "reference",
+          "mid": "audio/006-form-genome/reference-01.mid",
+          "source": "out/reference5/ref_abba_so-long.mid",
+          "fitness": null,
+          "chords": "I I bVII bVII IV IV IV IV I I bVII bVII IV IV IV IV",
+          "desc": {
+            "density": 5.0,
+            "entropy": 3.23,
+            "range": 4,
+            "compression": 0.4
+          },
+          "p_real": 0.787,
+          "credit": {
+            "text": "Abba \u2013 So Long (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/abba/so-long"
+          }
+        },
+        {
+          "id": "reference-02",
+          "label": "reference",
+          "mid": "audio/006-form-genome/reference-02.mid",
+          "source": "out/reference5/ref_adele_set-fire-to-the-rain.mid",
+          "fitness": null,
+          "chords": "ii ii vi vi I I V V ii ii vi vi I I V V",
+          "desc": {
+            "density": 4.5,
+            "entropy": 3.88,
+            "range": 11,
+            "compression": 0.42
+          },
+          "p_real": 0.804,
+          "credit": {
+            "text": "Adele \u2013 Set Fire To The Rain (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/adele/set-fire-to-the-rain"
+          }
+        },
+        {
+          "id": "reference-03",
+          "label": "reference",
+          "mid": "audio/006-form-genome/reference-03.mid",
+          "source": "out/reference5/ref_avicii_dear-boy.mid",
+          "fitness": null,
+          "chords": "IV V vi iii IV V iii vi IV V vi iii IV V I I",
+          "desc": {
+            "density": 5.38,
+            "entropy": 3.98,
+            "range": 23,
+            "compression": 0.47
+          },
+          "p_real": 0.779,
+          "credit": {
+            "text": "Avicii \u2013 Dear Boy (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/avicii/dear-boy"
+          }
+        },
+        {
+          "id": "reference-04",
+          "label": "reference",
+          "mid": "audio/006-form-genome/reference-04.mid",
+          "source": "out/reference5/ref_florence-and-the-machine_hunger.mid",
+          "fitness": null,
+          "chords": "I I IV IV vi vi V V V V IV IV vi vi V V",
+          "desc": {
+            "density": 5.62,
+            "entropy": 4.01,
+            "range": 27,
+            "compression": 0.51
+          },
+          "p_real": 0.746,
+          "credit": {
+            "text": "Florence And The Machine \u2013 Hunger (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/florence-and-the-machine/hunger"
+          }
+        }
+      ]
     }
   ]
 }
