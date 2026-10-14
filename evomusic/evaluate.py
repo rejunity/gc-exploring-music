@@ -89,7 +89,7 @@ def human_agreement(scorers: dict, ratings_dir: Path = ROOT / "data/ratings") ->
     from evomusic.midi_io import genome_from_midi
     from evomusic.ratings import load as load_ratings
     batches = {b["id"]: {c["id"]: c for c in b["clips"]} for b in json.loads((ROOT / "docs/batches.json").read_text())["batches"]}
-    rs = [r for r in load_ratings(sorted(ratings_dir.glob("*.json"))) if r["choice"] in ("A", "B")]
+    rs = [r for r in load_ratings(sorted(ratings_dir.glob("*.json"))) if r["choice"] in ("A", "B") and r.get("branch", "main") == "main"]
     if not rs:
         return {}
     clips = sorted({(r["batch"], r[k]) for r in rs for k in ("a", "b")})

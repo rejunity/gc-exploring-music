@@ -25,6 +25,11 @@ DOCS = ROOT / "docs"
 BATCHES = DOCS / "batches.json"
 
 
+def set_docs(path: Path) -> None:
+    global DOCS, BATCHES
+    DOCS, BATCHES = path, path / "batches.json"
+
+
 def load() -> dict:
     if BATCHES.exists():
         return json.loads(BATCHES.read_text())
@@ -49,12 +54,15 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--title", required=True)
     ap.add_argument("--notes", default="")
     ap.add_argument("--replace", action="store_true", help="overwrite a batch with the same id")
+    ap.add_argument("--docs", type=Path, help="site folder to publish into (default: this repo's docs/)")
     ap.add_argument("--mp3", action="store_true", help="also render mp3 (local listening; not needed for the site)")
     ap.add_argument("--credits", type=Path, help="json: {source filename: {text, url}} attached to clips as `credit`")
     a = ap.parse_args(rest)
     if not groups:
         sys.exit("give at least one --label NAME file.mid ...")
 
+    if a.docs:
+        set_docs(a.docs)
     credits = json.loads(a.credits.read_text()) if a.credits else {}
     data = load()
     if any(b["id"] == a.batch for b in data["batches"]):
@@ -80,6 +88,8 @@ def main(argv: list[str] | None = None) -> None:
                                             "range": d["pitch_range"], "compression": round(d["compression"], 2)}
                         if "p_real" in s:
                             info["p_real"] = round(s["p_real"], 3)
+                        if "amt_gap" in s:
+                            info["amt_gap"] = s["amt_gap"]
             if src.name in credits:
                 info["credit"] = credits[src.name]
             cid = f"{label}-{len([c for c in clips if c['label'] == label]) + 1:02d}"

@@ -1,0 +1,186 @@
+# Evolve new music on a free CPU runner and commit it to an experiment branch (exp/<name>).
+#
+# Two ways to start it:
+#   1. From the site's "Generate" tab: it opens a prefilled issue titled "evolve: ..." whose body
+#      holds a ```json {...}``` block. Only the repo owner / members / collaborators can trigger runs.
+#   2. Fallback: Actions tab -> "Evolve music" -> "Run workflow" (needs write access).
+#
+# The issue body is untrusted input: it is parsed and validated only by `python -m evomusic.ci params`
+# and never interpolated into shell commands.
+name: Evolve music
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:   { description: "Experiment branch (exp/<name>)", default: "exp/try", required: true }
+      iters:    { description: "MAP-Elites iterations (corpus: 10-2000, ~1 s each; critic: 10-800, ~7.5 s each)", default: "200", required: true }
+      seed:     { description: "Random seed", default: "0", required: true }
+      mode:     { description: "Fitness", type: choice, options: [corpus, critic], default: corpus }
+      continue: { description: "Continue from the branch's previous archive", type: boolean, default: true }
+      title:    { description: "Batch title (optional)", default: "", required: false }
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: evolve-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  evolve:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (startsWith(github.event.issue.title, 'evolve:') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      PYTHONUNBUFFERED: "1"
+      HF_HOME: ${{ github.workspace }}/.hf
+    steps:
+      - name: Checkout code (main)
+        uses: actions/checkout@v4
+        with: { path: code, fetch-depth: 0 }
+
+      - uses: astral-sh/setup-uv@v6
+        with: { enable-cache: true, cache-dependency-glob: code/uv.lock }
+
+      - name: Parse and validate parameters
+        id: p
+        working-directory: code
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          INPUT_BRANCH: ${{ inputs.branch }}
+          INPUT_ITERS: ${{ inputs.iters }}
+          INPUT_SEED: ${{ inputs.seed }}
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_CONTINUE: ${{ inputs.continue }}
+          INPUT_TITLE: ${{ inputs.title }}
+        run: uv run --no-project python -m evomusic.ci params
+
+      - name: Install CPU-only dependencies
+        working-directory: code
+        run: |
+          uv venv -q
+          uv pip install -q -e . --no-deps
+          uv pip install -q numpy mido symusic "transformers>=4.40" tqdm \
+            "anticipation @ git+https://github.com/jthickstun/anticipation.git@main"
+          uv pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Cache corpus data
+        uses: actions/cache@v4
+        with:
+          path: |
+            code/data/raw/hooktheory
+            code/data/processed
+          key: corpus-${{ hashFiles('code/data/manifest.json', 'code/evomusic/corpus/**', 'code/evomusic/fitness/**', 'code/evomusic/genome.py') }}
+
+      - name: Cache the large critic (AMT, ~1.4 GB)
+        uses: actions/cache@v4
+        with: { path: .hf, key: hf-amt-music-medium-800k }
+
+      - name: Prepare corpus (Hooktheory, n-grams, descriptor bands)
+        working-directory: code
+        run: |
+          [ -f data/processed/desc_bands.json ] || {
+            .venv/bin/python -m evomusic.data download hooktheory
+            .venv/bin/python -m evomusic.corpus.hooktheory
+            .venv/bin/python -m evomusic.fitness.ngram fit data/processed/hooktheory.jsonl data/processed/ngram_hooktheory.json
+            .venv/bin/python -m evomusic.fitness.descriptors fit data/processed/desc_bands.json
+          }
+
+      - name: Download small critic weights (critic mode)
+        if: steps.p.outputs.mode == 'critic'
+        working-directory: code
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release download critic-v1 --repo "${{ github.repository }}" --dir models --pattern '*.pt'
+
+      - name: Check out (or create) the experiment branch
+        env: { BRANCH: "${{ steps.p.outputs.branch }}" }
+        run: |
+          if git -C code ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+            git -C code worktree add ../site "origin/$BRANCH" -B "$BRANCH"
+          else
+            git -C code worktree add ../site origin/main -B "$BRANCH"
+          fi
+
+      - name: Evolve (MAP-Elites, CPU)
+        working-directory: code
+        env:
+          MODE: ${{ steps.p.outputs.mode }}
+          ITERS: ${{ steps.p.outputs.iters }}
+          SEED: ${{ steps.p.outputs.seed }}
+          CONT: ${{ steps.p.outputs.continue }}
+        run: |
+          RESUME=""
+          if [ "$CONT" = "true" ] && ls ../site/docs/archive/*.json >/dev/null 2>&1; then
+            RESUME="--resume $(ls -t ../site/docs/archive/*.json | head -1)"
+          fi
+          COMMON="--desc data/processed/desc_bands.json --desc-w 2.5 --rules 0.5 --iters $ITERS --batch 128 --bins 8 --init 512 --seed $SEED --out ../run $RESUME"
+          if [ "$MODE" = "critic" ]; then
+            .venv/bin/python -m evomusic.mapelites $COMMON --lm models/critic_lm.pt \
+              --disc models/critic_disc_r7.pt models/critic_disc_r8.pt models/critic_disc_r9.pt --disc-w 2
+          else
+            .venv/bin/python -m evomusic.mapelites $COMMON --ngram data/processed/ngram_hooktheory.json
+          fi
+
+      - name: Pick clips and run the large critic once (AMT, CPU)
+        working-directory: code
+        run: |
+          .venv/bin/python - <<'PY'
+          import json; from pathlib import Path
+          s = json.loads(Path("../run/summary.json").read_text())
+          cells = sorted([c for c in s["saved"] if not c["file"].startswith("star")], key=lambda c: tuple(c["cell"]))
+          chosen = [s["star"]] + [cells[int(i * len(cells) / 7)]["file"] for i in range(min(7, len(cells)))]
+          Path("../run/chosen.txt").write_text("\n".join("../run/" + f for f in chosen))
+          PY
+          .venv/bin/python -m evomusic.ci final-check ../run ../run/chosen.txt
+
+      - name: Publish to the branch's site folder
+        id: pub
+        working-directory: code
+        env:
+          BRANCH: ${{ steps.p.outputs.branch }}
+          MODE: ${{ steps.p.outputs.mode }}
+          ITERS: ${{ steps.p.outputs.iters }}
+          SEED: ${{ steps.p.outputs.seed }}
+          TITLE: ${{ steps.p.outputs.title }}
+        run: |
+          BATCH="$(date -u +%Y%m%d)-run${{ github.run_number }}"
+          mkdir -p ../site/docs/archive
+          cp ../run/summary.json "../site/docs/archive/$BATCH.json"
+          .venv/bin/python -m evomusic.publish "$BATCH" --docs ../site/docs \
+            --title "${TITLE:-$MODE run, $ITERS iterations, seed $SEED}" \
+            --notes "GitHub Actions run ${{ github.run_number }} on $BRANCH ($MODE fitness, CPU). 'AMT gap' = large-critic check: NLL minus real pop of similar density (negative = more natural)." \
+            --label evolved $(cat ../run/chosen.txt)
+          echo "batch=$BATCH" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push the experiment branch
+        working-directory: site
+        env: { BRANCH: "${{ steps.p.outputs.branch }}", BATCH: "${{ steps.pub.outputs.batch }}" }
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs
+          git commit -q -m "evolve: $BATCH on $BRANCH"
+          git push -q origin "HEAD:refs/heads/$BRANCH"
+
+      - name: Report back on the issue
+        if: always() && github.event_name == 'issues'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.p.outputs.branch }}
+          BATCH: ${{ steps.pub.outputs.batch }}
+          STATUS: ${{ job.status }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ "$STATUS" = "success" ]; then
+            MSG="Done. Listen: https://rejunity.github.io/gc-exploring-music/?branch=$BRANCH (batch \`$BATCH\`). Run log: $RUN_URL"
+            gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body "$MSG"
+            gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}"
+          else
+            gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body "Run failed ($STATUS). Log: $RUN_URL"
+          fi

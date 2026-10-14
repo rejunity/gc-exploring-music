@@ -52,7 +52,22 @@ uv run python -m evomusic.mapelites --ngram data/processed/ngram_hooktheory.json
 ```
 
 The learned-critic mode (transformer critic, adversarial training, GPU) is
-described in [PLAN.md](PLAN.md) section 6.7-6.8.
+described in [PLAN.md](PLAN.md) section 6.7-6.10.
+
+### Generate from the website (GitHub Actions)
+
+The site's **Generate** tab starts a run on a free GitHub CPU runner and commits the
+results to an experiment branch `exp/<name>`, which then appears in the site's branch
+selector. Two ways to start, both limited to the repo owner and collaborators:
+
+1. **Prefilled issue** (one click from the site): the issue's JSON block holds the
+   parameters; the workflow comments a listen link on the issue and closes it.
+2. **Fallback**: Actions tab, "Evolve music", "Run workflow".
+
+Modes: `corpus` (n-grams + descriptor bands, ~1 s per iteration) or `critic` (small
+transformer critic from the `critic-v1` release, ~7.5 s per iteration, max 800).
+The large Anticipatory Music Transformer runs once at the end on the published clips
+("AMT gap"). See `.github/workflows/evolve.yml`.
 
 ## Data
 

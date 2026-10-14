@@ -100,9 +100,18 @@ def main() -> None:
     ap.add_argument("--desc-w", type=float, default=2.0)
     ap.add_argument("--amt-w", type=float, default=0.0, help="Anticipatory Music Transformer term weight (GPU, ~15 genomes/s)")
     ap.add_argument("--out", type=Path, default=Path("out/me"))
+    ap.add_argument("--resume", type=Path, nargs="*", default=[], help="summary.json files whose pieces seed the archive (continue a lineage)")
     a = ap.parse_args()
     fitness = build(a.rules, a.ngram, 0.5, a.lm, a.lm_w, a.disc or None, a.disc_w, a.desc, a.desc_w, a.amt_w)
-    archive = run(fitness, a.iters, a.batch, a.bins, a.seed, a.init)
+    seeds = []
+    for path in a.resume:
+        if path.exists():
+            for c in json.loads(path.read_text()).get("saved", []):
+                if "melody" in c and "chord_ids" in c:
+                    seeds.append(Genome([tuple(x) for x in c["melody"]], c["chord_ids"], 8))
+    if seeds:
+        print(f"resuming from {len(seeds)} pieces", flush=True)
+    archive = run(fitness, a.iters, a.batch, a.bins, a.seed, a.init, seeds=seeds)
     s = export(archive, fitness, a.out, a.bins)
     print("star:", s["star"], {k: round(v, 3) for k, v in s["star_breakdown"].items()})
 

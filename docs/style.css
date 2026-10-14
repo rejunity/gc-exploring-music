@@ -42,3 +42,6 @@ a.button.disabled { pointer-events:none; opacity:.45; }
 .steps .hint { display:block; margin-top:4px; }
 .done { text-align:center; font-weight:600; }
 button:disabled { opacity:.45; cursor:default; }
+label.branch { margin-left: 12px; align-self: center; color: var(--muted); font-size: .9rem; }
+.form label { display: block; margin: 8px 0; }
+.prefix { color: var(--muted); margin-right: 2px; }

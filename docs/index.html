@@ -14,6 +14,8 @@
   <nav>
     <button id="tab-listen" class="tab active">Listen</button>
     <button id="tab-rate" class="tab">Rate A / B</button>
+    <button id="tab-generate" class="tab">Generate</button>
+    <label class="branch">Branch <select id="branch"></select></label>
     <a class="tab link" id="repo-link" href="#" target="_blank" rel="noopener">GitHub ↗</a>
   </nav>
 </header>
@@ -21,6 +23,34 @@
 <main>
   <section id="listen">
     <div id="batches"></div>
+  </section>
+
+  <section id="generate" hidden>
+    <div class="card">
+      <p>Run the genetic algorithm on a free GitHub Actions runner (CPU). Results are committed to an
+      experiment branch <code>exp/&lt;name&gt;</code> and appear in the branch selector above when the run finishes.
+      Each branch is a lineage: with "continue" on, a new run starts from that branch's previous archive.</p>
+      <div class="form">
+        <label>Branch <span class="prefix">exp/</span><input id="g-branch" value="try" size="18"></label>
+        <label>Fitness <select id="g-mode">
+          <option value="corpus">corpus (n-grams + bands, ~1 s / iteration)</option>
+          <option value="critic">critic (small transformer critic, ~7.5 s / iteration)</option>
+        </select></label>
+        <label>Iterations <input id="g-iters" type="number" value="200" min="10" max="2000" size="6"></label>
+        <label>Seed <input id="g-seed" type="number" value="0" size="6"></label>
+        <label><input id="g-continue" type="checkbox" checked> continue from the branch's last archive</label>
+        <label>Title <input id="g-title" placeholder="optional" size="28"></label>
+      </div>
+      <p id="g-estimate" class="hint"></p>
+      <ol class="steps">
+        <li><a id="g-issue" class="button" href="#" target="_blank" rel="noopener">Start via GitHub issue ↗</a>
+          <span class="hint">Opens a prefilled issue; press <b>Create</b>. Only the repo owner and collaborators can start runs.
+          The issue gets a comment with a listen link when the run finishes, then closes.</span></li>
+        <li><a id="g-dispatch" href="#" target="_blank" rel="noopener">Fallback: GitHub's "Run workflow" form ↗</a>
+          <span class="hint">Press <b>Run workflow</b> there and enter the same values: <code id="g-values"></code></span></li>
+      </ol>
+      <p class="hint"><a id="g-runs" href="#" target="_blank" rel="noopener">See running and finished runs ↗</a></p>
+    </div>
   </section>
 
   <section id="rate" hidden>
