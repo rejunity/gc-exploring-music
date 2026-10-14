@@ -36,6 +36,10 @@
           <option value="corpus">corpus (n-grams + bands, ~1 s / iteration)</option>
           <option value="critic">critic (small transformer critic, ~7.5 s / iteration)</option>
         </select></label>
+        <label>Genome <select id="g-genome">
+          <option value="form">form: motifs + phrase plan (hooks, question / answer)</option>
+          <option value="notes">notes: flat melody</option>
+        </select></label>
         <label>Iterations <input id="g-iters" type="number" value="200" min="10" max="2000" size="6"></label>
         <label>Seed <input id="g-seed" type="number" value="0" size="6"></label>
         <label><input id="g-continue" type="checkbox" checked> continue from the branch's last archive</label>
@@ -88,7 +92,9 @@
     </div>
   </section>
 </main>
-<footer><p>Built from <code>docs/batches.json</code>. Playback is in your browser from the <code>.mid</code> files via <a href="https://github.com/cifkao/html-midi-player">html-midi-player</a> with Magenta's SGM Plus soundfont (loaded from Google's CDN on first play). The <code>.mid</code> links let you open them in a DAW.</p></footer>
+<footer><p class="hint"><b>Phrase plan</b>, one symbol per bar: letters are different motifs (a = the first, often the hook);
+<code>=</code> exact repeat, <code>~</code> the motif a step higher or lower (sequence), <code>'</code> same start with a new ending,
+<code>*</code> same rhythm with new notes, <code>f</code> first half repeated (fragmentation).</p><p>Built from <code>docs/batches.json</code>. Playback is in your browser from the <code>.mid</code> files via <a href="https://github.com/cifkao/html-midi-player">html-midi-player</a> with Magenta's SGM Plus soundfont (loaded from Google's CDN on first play). The <code>.mid</code> links let you open them in a DAW.</p></footer>
 <script src="app.js"></script>
 </body>
 </html>

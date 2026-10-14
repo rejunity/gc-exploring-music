@@ -20,7 +20,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BRANCH_RE = re.compile(r"^exp/[a-z0-9][a-z0-9._-]{0,39}$")
 MODES = ("corpus", "critic")
-DEFAULTS = {"branch": "exp/try", "iters": 200, "seed": 0, "mode": "corpus", "continue": True, "title": ""}
+GENOMES = ("form", "notes")
+DEFAULTS = {"branch": "exp/try", "iters": 200, "seed": 0, "mode": "corpus", "genome": "form", "continue": True, "title": ""}
 
 
 def _from_issue(body: str) -> dict:
@@ -44,6 +45,8 @@ def validate(raw: dict) -> dict:
     p["seed"] = int(p["seed"]) % 100000
     if p["mode"] not in MODES:
         raise ValueError(f"mode must be one of {MODES}")
+    if p["genome"] not in GENOMES:
+        raise ValueError(f"genome must be one of {GENOMES}")
     if p["mode"] == "critic" and p["iters"] > 800:
         raise ValueError("critic mode on a CPU runner: iters must be <= 800 (~7.5 s per iteration); continue the branch for more")
     p["continue"] = str(p["continue"]).lower() in ("1", "true", "yes", "on")

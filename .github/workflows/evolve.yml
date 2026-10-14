@@ -16,6 +16,7 @@ on:
       iters:    { description: "MAP-Elites iterations (corpus: 10-2000, ~1 s each; critic: 10-800, ~7.5 s each)", default: "200", required: true }
       seed:     { description: "Random seed", default: "0", required: true }
       mode:     { description: "Fitness", type: choice, options: [corpus, critic], default: corpus }
+      genome:   { description: "Genome: form (motifs + phrase plan) or notes (flat)", type: choice, options: [form, notes], default: form }
       continue: { description: "Continue from the branch's previous archive", type: boolean, default: true }
       title:    { description: "Batch title (optional)", default: "", required: false }
   issues:
@@ -57,6 +58,7 @@ jobs:
           INPUT_ITERS: ${{ inputs.iters }}
           INPUT_SEED: ${{ inputs.seed }}
           INPUT_MODE: ${{ inputs.mode }}
+          INPUT_GENOME: ${{ inputs.genome }}
           INPUT_CONTINUE: ${{ inputs.continue }}
           INPUT_TITLE: ${{ inputs.title }}
         run: uv run --no-project python -m evomusic.ci params
@@ -111,6 +113,7 @@ jobs:
         working-directory: code
         env:
           MODE: ${{ steps.p.outputs.mode }}
+          GENOME: ${{ steps.p.outputs.genome }}
           ITERS: ${{ steps.p.outputs.iters }}
           SEED: ${{ steps.p.outputs.seed }}
           CONT: ${{ steps.p.outputs.continue }}
@@ -119,7 +122,7 @@ jobs:
           if [ "$CONT" = "true" ] && ls ../site/docs/archive/*.json >/dev/null 2>&1; then
             RESUME="--resume $(ls -t ../site/docs/archive/*.json | head -1)"
           fi
-          COMMON="--desc data/processed/desc_bands.json --desc-w 2.5 --rules 0.5 --iters $ITERS --batch 128 --bins 8 --init 512 --seed $SEED --out ../run $RESUME"
+          COMMON="--genome $GENOME --cvt data/cvt_hooktheory.json --desc data/processed/desc_bands.json --desc-w 2.5 --rules 0.5 --iters $ITERS --batch 128 --init 512 --seed $SEED --out ../run $RESUME"
           if [ "$MODE" = "critic" ]; then
             .venv/bin/python -m evomusic.mapelites $COMMON --lm models/critic_lm.pt \
               --disc models/critic_disc_r7.pt models/critic_disc_r8.pt models/critic_disc_r9.pt --disc-w 2
@@ -130,13 +133,7 @@ jobs:
       - name: Pick clips and run the large critic once (AMT, CPU)
         working-directory: code
         run: |
-          .venv/bin/python - <<'PY'
-          import json; from pathlib import Path
-          s = json.loads(Path("../run/summary.json").read_text())
-          cells = sorted([c for c in s["saved"] if not c["file"].startswith("star")], key=lambda c: tuple(c["cell"]))
-          chosen = [s["star"]] + [cells[int(i * len(cells) / 7)]["file"] for i in range(min(7, len(cells)))]
-          Path("../run/chosen.txt").write_text("\n".join("../run/" + f for f in chosen))
-          PY
+          .venv/bin/python -m evomusic.pick ../run --n 7 --seed "${{ steps.p.outputs.seed }}"
           .venv/bin/python -m evomusic.ci final-check ../run ../run/chosen.txt
 
       - name: Publish to the branch's site folder
@@ -145,6 +142,7 @@ jobs:
         env:
           BRANCH: ${{ steps.p.outputs.branch }}
           MODE: ${{ steps.p.outputs.mode }}
+          GENOME: ${{ steps.p.outputs.genome }}
           ITERS: ${{ steps.p.outputs.iters }}
           SEED: ${{ steps.p.outputs.seed }}
           TITLE: ${{ steps.p.outputs.title }}
@@ -153,8 +151,8 @@ jobs:
           mkdir -p ../site/docs/archive
           cp ../run/summary.json "../site/docs/archive/$BATCH.json"
           .venv/bin/python -m evomusic.publish "$BATCH" --docs ../site/docs \
-            --title "${TITLE:-$MODE run, $ITERS iterations, seed $SEED}" \
-            --notes "GitHub Actions run ${{ github.run_number }} on $BRANCH ($MODE fitness, CPU). 'AMT gap' = large-critic check: NLL minus real pop of similar density (negative = more natural)." \
+            --title "${TITLE:-$MODE run, $GENOME genome, $ITERS iterations, seed $SEED}" \
+            --notes "GitHub Actions run ${{ github.run_number }} on $BRANCH ($MODE fitness, $GENOME genome, real-pop-shaped archive, CPU). Clips sampled in proportion to how common their region is in real pop. 'AMT gap' = large-critic check: NLL minus real pop of similar density (negative = more natural)." \
             --label evolved $(cat ../run/chosen.txt)
           echo "batch=$BATCH" >> "$GITHUB_OUTPUT"
 

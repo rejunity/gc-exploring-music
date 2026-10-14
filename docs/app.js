@@ -46,8 +46,8 @@ async function init() {
   $("#tab-listen").onclick = () => showTab("listen");
   $("#tab-rate").onclick = () => showTab("rate");
   $("#tab-generate").onclick = () => showTab("generate");
-  ["#g-branch", "#g-mode", "#g-iters", "#g-seed", "#g-continue", "#g-title"].forEach((id) => ($(id).oninput = updateGenerate));
-  $("#g-mode").onchange = updateGenerate; $("#g-continue").onchange = updateGenerate;
+  ["#g-branch", "#g-mode", "#g-genome", "#g-iters", "#g-seed", "#g-continue", "#g-title"].forEach((id) => ($(id).oninput = updateGenerate));
+  $("#g-mode").onchange = updateGenerate; $("#g-genome").onchange = updateGenerate; $("#g-continue").onchange = updateGenerate;
   if (BRANCH.startsWith("exp/")) $("#g-branch").value = BRANCH.slice(4);
   updateGenerate();
   $("#rate-start").onclick = startSession;
@@ -70,7 +70,7 @@ function showTab(name) {
 
 function genParams() {
   const slug = $("#g-branch").value.trim().toLowerCase().replace(/^exp\//, "").replace(/\s+/g, "-").replace(/[^a-z0-9._-]/g, "");
-  return { branch: "exp/" + (slug || "try"), mode: $("#g-mode").value, iters: +$("#g-iters").value || 200,
+  return { branch: "exp/" + (slug || "try"), mode: $("#g-mode").value, genome: $("#g-genome").value, iters: +$("#g-iters").value || 200,
            seed: +$("#g-seed").value || 0, continue: $("#g-continue").checked, title: $("#g-title").value.trim() };
 }
 
@@ -81,13 +81,13 @@ function updateGenerate() {
   const mins = Math.round((p.iters * perIter) / 60 + 4);
   $("#g-estimate").textContent = p.iters > max ? `Too many iterations for ${p.mode} mode (max ${max}).`
     : `Estimated run time ~${mins} min (incl. ~4 min setup). Result: 8 clips on ${p.branch}.`;
-  const title = `evolve: ${p.branch} ${p.mode} ${p.iters}${p.title ? " — " + p.title : ""}`;
+  const title = `evolve: ${p.branch} ${p.mode} ${p.genome} ${p.iters}${p.title ? " — " + p.title : ""}`;
   const body = "Started from the site's Generate tab. Parameters:\n\n```json\n" + JSON.stringify(p, null, 1) + "\n```";
   $("#g-issue").href = `https://github.com/${REPO}/issues/new?labels=evolve&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   $("#g-issue").classList.toggle("disabled", p.iters > max);
   $("#g-dispatch").href = `https://github.com/${REPO}/actions/workflows/evolve.yml`;
   $("#g-runs").href = `https://github.com/${REPO}/actions/workflows/evolve.yml`;
-  $("#g-values").textContent = `branch=${p.branch}, iters=${p.iters}, seed=${p.seed}, mode=${p.mode}, continue=${p.continue}`;
+  $("#g-values").textContent = `branch=${p.branch}, iters=${p.iters}, seed=${p.seed}, mode=${p.mode}, genome=${p.genome}, continue=${p.continue}`;
 }
 
 function renderListen() {
@@ -108,7 +108,8 @@ function renderListen() {
         c.p_real != null ? `critic "sounds real" ${c.p_real}` : null,
         c.amt_gap != null ? `AMT gap ${c.amt_gap > 0 ? "+" : ""}${c.amt_gap}` : null,
         c.desc ? `density ${c.desc.density} notes/bar · melodic entropy ${c.desc.entropy} bits · range ${c.desc.range} st` : null,
-        c.chords ? `chords: ${c.chords}` : null].filter(Boolean).join(" · ");
+        c.chords ? `chords: ${c.chords}` : null,
+        c.plan ? `phrase plan: ${c.plan}` : null].filter(Boolean).join(" · ");
       el.innerHTML = `<div class="title">${star}${c.id}<span class="label">${c.label}</span></div>
         <a href="${BASE}${c.mid}" download>.mid</a>
         ${info ? `<div class="info">${info}</div>` : ""}

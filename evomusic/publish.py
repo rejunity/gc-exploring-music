@@ -90,6 +90,8 @@ def main(argv: list[str] | None = None) -> None:
                             info["p_real"] = round(s["p_real"], 3)
                         if "amt_gap" in s:
                             info["amt_gap"] = s["amt_gap"]
+                        if "plan" in s:
+                            info["plan"] = s["plan"]
             if src.name in credits:
                 info["credit"] = credits[src.name]
             cid = f"{label}-{len([c for c in clips if c['label'] == label]) + 1:02d}"
