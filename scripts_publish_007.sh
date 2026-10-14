@@ -3,7 +3,7 @@
 # corpus-sampled motifs) vs real pop. 8 evolved (star + 7 picks by real-pop weight) + 4 references.
 set -euo pipefail
 export PATH=$HOME/.local/bin:$PATH
-RUN=out/final_v7_form
+RUN=${1:-out/final_v7_form}
 uv run python -m evomusic.pick $RUN --n 7 --seed 7 >/dev/null
 # grader3 verdict on the references, for the site
 uv run python - <<'PY'
