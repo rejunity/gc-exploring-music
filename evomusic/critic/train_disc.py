@@ -76,7 +76,29 @@ def _swap(g, other, rng):
     return Genome.from_bars(g.bar_genes(), other.chords)
 
 
-FAMILIES = ["mut1", "mut3", "mut8", "pitch_noise", "bar_shuffle", "chord_shuffle", "swap", "random", "random_scale"]
+def _half_swap(g, other, rng):
+    """First phrase from one song, second phrase from another: breaks antecedent/consequent structure."""
+    a, b = g.bar_genes(), other.bar_genes()
+    h = len(a) // 2
+    return Genome.from_bars(a[:h] + b[h:], g.chords[:len(g.chords) // 2] + other.chords[len(other.chords) // 2:])
+
+
+def _thin(g, rng):
+    """Sparse version of a real melody: merge ~half the notes into their predecessor (sparse but not designed)."""
+    out = []
+    for bar in g.bar_genes():
+        nb = [bar[0]]
+        for p, d in bar[1:]:
+            if rng.random() < 0.5:
+                q, e = nb[-1]; nb[-1] = (q, e + d)
+            else:
+                nb.append((p, d))
+        out.append(nb)
+    return Genome.from_bars(out, g.chords)
+
+
+FAMILIES = ["mut1", "mut3", "mut8", "pitch_noise", "bar_shuffle", "chord_shuffle", "swap", "random", "random_scale",
+            "half_swap", "thin"]
 
 
 def make_fake(kind: str, reals: list[Genome], rng: random.Random) -> Genome:
@@ -98,6 +120,10 @@ def make_fake(kind: str, reals: list[Genome], rng: random.Random) -> Genome:
         return _chord_shuffle(g, rng)
     if kind == "swap":
         return _swap(g, rng.choice(reals), rng)
+    if kind == "half_swap":
+        return _half_swap(g, rng.choice(reals), rng)
+    if kind == "thin":
+        return _thin(g, rng)
     if kind == "random":
         return Genome.random(rng=rng)
     if kind == "random_scale":

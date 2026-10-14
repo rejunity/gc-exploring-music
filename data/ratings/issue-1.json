@@ -1,0 +1,167 @@
+{
+ "issue": 1,
+ "author": "rejunity",
+ "createdAt": "2026-10-14T07:02:50Z",
+ "ratings": [
+  {
+   "t": "2026-10-14T06:53:20.839Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "reference-01",
+   "b": "evolved-01",
+   "choice": "A"
+  },
+  {
+   "t": "2026-10-14T06:53:54.738Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-07",
+   "b": "reference-03",
+   "choice": "B"
+  },
+  {
+   "t": "2026-10-14T06:54:14.412Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-06",
+   "b": "evolved-08",
+   "choice": "tie"
+  },
+  {
+   "t": "2026-10-14T06:54:49.389Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "reference-01",
+   "b": "evolved-02",
+   "choice": "A"
+  },
+  {
+   "t": "2026-10-14T06:55:14.352Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-03",
+   "b": "evolved-02",
+   "choice": "B"
+  },
+  {
+   "t": "2026-10-14T06:55:48.220Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-03",
+   "b": "reference-01",
+   "choice": "B"
+  },
+  {
+   "t": "2026-10-14T06:56:09.750Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-08",
+   "b": "evolved-04",
+   "choice": "A"
+  },
+  {
+   "t": "2026-10-14T06:56:32.289Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-08",
+   "b": "evolved-05",
+   "choice": "tie"
+  },
+  {
+   "t": "2026-10-14T06:57:14.742Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-06",
+   "b": "evolved-01",
+   "choice": "B"
+  },
+  {
+   "t": "2026-10-14T06:57:34.197Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "reference-01",
+   "b": "evolved-05",
+   "choice": "A"
+  },
+  {
+   "t": "2026-10-14T06:57:54.780Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "reference-02",
+   "b": "evolved-02",
+   "choice": "A"
+  },
+  {
+   "t": "2026-10-14T06:58:14.773Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "reference-04",
+   "b": "evolved-01",
+   "choice": "A"
+  },
+  {
+   "t": "2026-10-14T06:58:59.321Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-04",
+   "b": "evolved-07",
+   "choice": "B"
+  },
+  {
+   "t": "2026-10-14T06:59:15.398Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "reference-02",
+   "b": "evolved-07",
+   "choice": "A"
+  },
+  {
+   "t": "2026-10-14T06:59:31.246Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "reference-02",
+   "b": "evolved-08",
+   "choice": "A"
+  },
+  {
+   "t": "2026-10-14T06:59:45.148Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-04",
+   "b": "reference-02",
+   "choice": "B"
+  },
+  {
+   "t": "2026-10-14T06:59:56.423Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-04",
+   "b": "reference-04",
+   "choice": "B"
+  },
+  {
+   "t": "2026-10-14T07:00:32.906Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-07",
+   "b": "evolved-05",
+   "choice": "A"
+  },
+  {
+   "t": "2026-10-14T07:01:08.563Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-04",
+   "b": "evolved-02",
+   "choice": "B"
+  },
+  {
+   "t": "2026-10-14T07:01:48.999Z",
+   "rater": "rej",
+   "batch": "003-critic-final",
+   "a": "evolved-04",
+   "b": "reference-01",
+   "choice": "B"
+  }
+ ]
+}

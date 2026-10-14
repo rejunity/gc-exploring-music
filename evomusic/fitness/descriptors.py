@@ -20,7 +20,32 @@ from evomusic.genome import Genome
 ROOT = Path(__file__).resolve().parent.parent.parent
 
 
+def _bar_rhythm(b) -> tuple:
+    t, out = 0, []
+    for p, d in b:
+        if p is not None:
+            out.append(t)
+        t += d
+    return tuple(out)
+
+
+def _bar_contour(b) -> tuple:
+    ps = [p for p, _ in b if p is not None]
+    return tuple(max(-1, min(1, y - x)) for x, y in zip(ps, ps[1:]))      # up / same / down
+
+
+def phrase_parallel(g: Genome) -> tuple[float, float]:
+    """How much bar k is mirrored by bar k + bars/2 (antecedent / consequent):
+    fraction of identical onset rhythms, and of identical up/down contours."""
+    bars = g.bar_genes()
+    h = len(bars) // 2
+    R = [_bar_rhythm(b) for b in bars]
+    C = [_bar_contour(b) for b in bars]
+    return (sum(R[i] == R[i + h] for i in range(h)) / h, sum(C[i] == C[i + h] for i in range(h)) / h)
+
+
 def cheap_descriptors(g: Genome) -> dict[str, float]:
+    pr, pc = phrase_parallel(g)
     ps = g.pitches()
     iv = [abs(b - a) for a, b in zip(ps, ps[1:])]
     return {
@@ -33,6 +58,8 @@ def cheap_descriptors(g: Genome) -> dict[str, float]:
         "entropy_rate": entropy_rate(g),
         "compression": compression(g),
         "mean_pitch": st.mean(ps) if ps else 0,
+        "parallel_rhythm": pr,
+        "parallel_contour": pc,
     }
 
 
