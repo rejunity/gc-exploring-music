@@ -12,9 +12,47 @@ See [PLAN.md](PLAN.md) for the roadmap, datasets, and tooling.
 ## Quick start
 
 ```bash
-uv sync                      # creates .venv with the core deps
+uv sync                           # creates .venv with the core deps
 uv run python -m evomusic.smoke   # writes out/smoke.mid (a random 8-bar melody)
 ```
+
+### Generate your first piece (no data needed)
+
+From a fresh clone, the rules-only genetic algorithm runs on the CPU in about
+10 seconds and needs no downloads:
+
+```bash
+git clone https://github.com/rejunity/gc-exploring-music && cd gc-exploring-music
+uv sync
+uv run python -m evomusic.evolve --out out/first     # -> out/first/star_*.mid (best) + top1..top4
+```
+
+Open the `.mid` in any DAW or player. To get an mp3 instead (needs
+`apt install fluidsynth fluid-soundfont-gm ffmpeg`):
+
+```bash
+uv run python -m evomusic.render out/first/star_*.mid
+```
+
+### Install the corpus (optional, for better-sounding results)
+
+Not needed for the step above. The corpus lets the fitness learn from real pop
+melodies. One line downloads every core dataset (~110 MB, sha256-verified),
+converts Hooktheory, and fits the corpus statistics:
+
+```bash
+uv run python -m evomusic.data download && uv run python -m evomusic.corpus.hooktheory && uv run python -m evomusic.fitness.ngram fit data/processed/hooktheory.jsonl data/processed/ngram_hooktheory.json && uv run python -m evomusic.fitness.descriptors fit data/processed/desc_bands.json
+```
+
+Then generate a whole archive of diverse pieces guided by the corpus (CPU, ~1 minute).
+The best one is `star_*.mid`; the other files are one per density x melodic-entropy cell:
+
+```bash
+uv run python -m evomusic.mapelites --ngram data/processed/ngram_hooktheory.json --desc data/processed/desc_bands.json --iters 300 --out out/corpus
+```
+
+The learned-critic mode (transformer critic, adversarial training, GPU) is
+described in [PLAN.md](PLAN.md) section 6.7-6.8.
 
 ## Data
 
