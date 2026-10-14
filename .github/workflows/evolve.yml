@@ -98,7 +98,7 @@ jobs:
         if: steps.p.outputs.mode == 'critic'
         working-directory: code
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: gh release download critic-v1 --repo "${{ github.repository }}" --dir models --pattern '*.pt'
+        run: gh release download critic-v2 --repo "${{ github.repository }}" --dir models --pattern '*.pt'
 
       - name: Check out (or create) the experiment branch
         env: { BRANCH: "${{ steps.p.outputs.branch }}" }
@@ -125,7 +125,7 @@ jobs:
           COMMON="--genome $GENOME --cvt data/cvt_hooktheory.json --desc data/processed/desc_bands.json --desc-w 2.5 --rules 0.5 --iters $ITERS --batch 128 --init 512 --seed $SEED --out ../run $RESUME"
           if [ "$MODE" = "critic" ]; then
             .venv/bin/python -m evomusic.mapelites $COMMON --lm models/critic_lm.pt \
-              --disc models/critic_disc_r7.pt models/critic_disc_r8.pt models/critic_disc_r9.pt --disc-w 2
+              --disc models/critic_disc_r8.pt models/critic_disc_r9.pt models/critic_disc_r10.pt --disc-w 2
           else
             .venv/bin/python -m evomusic.mapelites $COMMON --ngram data/processed/ngram_hooktheory.json
           fi

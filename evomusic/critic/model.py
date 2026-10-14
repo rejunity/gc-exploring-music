@@ -53,13 +53,18 @@ def pad_batch(seqs: list[list[int]], ctx: int, device) -> torch.Tensor:
     return x.to(device)
 
 
-def lm_nll(model: Backbone, x: torch.Tensor) -> torch.Tensor:
-    """Mean next-token NLL per sequence."""
+def lm_nll(model: Backbone, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
+    """Mean next-token NLL per sequence. `mask` (same shape as x, bool) restricts the
+    average to chosen target tokens, e.g. tokens of bars that are not exact repeats."""
     logits = model.forward_lm(x[:, :-1])
     tgt = x[:, 1:]
     nll = F.cross_entropy(logits.transpose(1, 2), tgt, reduction="none", ignore_index=PAD)
-    n = (tgt != PAD).sum(1).clamp(min=1)
-    return nll.sum(1) / n
+    keep = (tgt != PAD)
+    if mask is not None:
+        m = mask[:, 1:] & keep
+        keep = torch.where(m.sum(1, keepdim=True) > 0, m, keep)      # all bars repeat: fall back to everything
+    n = keep.sum(1).clamp(min=1)
+    return (nll * keep).sum(1) / n
 
 
 def save(model: Backbone, path: Path, **extra) -> None:
@@ -86,11 +91,24 @@ class Critic:
         self.disc = self.discs[0] if self.discs else None
 
     @torch.no_grad()
-    def nll(self, gs: list[Genome], bs: int = 128) -> list[float]:
+    def nll(self, gs: list[Genome], bs: int = 128, novel_only: bool = False) -> list[float]:
+        """Mean token NLL. novel_only=True scores only the bars that are not exact repeats of
+        an earlier bar, so repeating material cannot lower the score (repetition is judged
+        elsewhere: form, behaviour axes, discriminators)."""
+        from evomusic.critic.tokens import bar_of_tokens, novel_bars
         out = []
         for i in range(0, len(gs), bs):
-            x = pad_batch([encode(g) for g in gs[i:i + bs]], self.lm.cfg["ctx"], self.device)
-            out += lm_nll(self.lm, x).tolist()
+            chunk = gs[i:i + bs]
+            seqs = [encode(g) for g in chunk]
+            x = pad_batch(seqs, self.lm.cfg["ctx"], self.device)
+            mask = None
+            if novel_only:
+                mask = torch.zeros_like(x, dtype=torch.bool)
+                for j, (g, seq) in enumerate(zip(chunk, seqs)):
+                    nov = novel_bars(g)
+                    bars = bar_of_tokens(seq)[:x.shape[1]]
+                    mask[j, :len(bars)] = torch.tensor([b >= 0 and nov[b] for b in bars])
+            out += lm_nll(self.lm, x, mask).tolist()
         return out
 
     @torch.no_grad()
@@ -104,13 +122,14 @@ class Critic:
         return out
 
     # ---- fitness terms -----------------------------------------------------
-    def lm_term(self):
+    def lm_term(self, novel_only: bool = False):
         from evomusic.fitness import as5, band_peak
-        q = as5(self.lm_meta.get("quantiles5") or self.lm_meta.get("quantiles") or self.lm_meta["band"])
+        key = "quantiles5_novel" if novel_only else "quantiles5"
+        q = as5(self.lm_meta.get(key) or self.lm_meta.get("quantiles5") or self.lm_meta.get("quantiles") or self.lm_meta["band"])
         def score(x: float) -> float:                     # peak at the real median NLL, 0 at p5 / p95
             return band_peak(x, *q)
-        f = lambda g: score(self.nll([g])[0])
-        f.batch = lambda gs: [score(x) for x in self.nll(gs)]
+        f = lambda g: score(self.nll([g], novel_only=novel_only)[0])
+        f.batch = lambda gs: [score(x) for x in self.nll(gs, novel_only=novel_only)]
         f.__name__ = "critic_lm"
         return f
 

@@ -95,7 +95,7 @@ jobs:
         if: steps.p.outputs.mode == 'critic'
         working-directory: code
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: gh release download critic-v1 --repo "${{ github.repository }}" --dir models --pattern '*.pt'
+        run: gh release download critic-v2 --repo "${{ github.repository }}" --dir models --pattern '*.pt'
 
       - name: Check out the branch to explore (read-only)
         env: { BRANCH: "${{ steps.p.outputs.branch }}" }

@@ -43,6 +43,22 @@ def encode(g: Genome) -> list[int]:
     return out
 
 
+def bar_of_tokens(seq: list[int]) -> list[int]:
+    """Bar index (0-based) of every token; -1 for <bos>/<eos>/<pad>."""
+    out, bar = [], -1
+    for t in seq:
+        if t == TOK["BAR"]:
+            bar += 1
+        out.append(-1 if t in (BOS, EOS, PAD) else bar)
+    return out
+
+
+def novel_bars(g: Genome) -> list[bool]:
+    """Per bar: True unless the bar is an exact repeat of an earlier bar (form parser '=')."""
+    from evomusic.form import from_genome
+    return [not t.endswith("=") for t in from_genome(g)[1]]
+
+
 def windows(g: Genome, bars: int = 8, hop: int = 4) -> list[Genome]:
     """Bar-aligned windows of `bars` bars (the GA's phrase length)."""
     if g.bars <= bars:

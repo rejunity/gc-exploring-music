@@ -194,6 +194,7 @@ def main() -> None:
     ap.add_argument("--desc", type=Path)
     ap.add_argument("--desc-w", type=float, default=2.5)
     ap.add_argument("--amt-w", type=float, default=0.0)
+    ap.add_argument("--novel-only", action="store_true", help="likelihood judges score only non-repeated bars")
     ap.add_argument("--agg", choices=["geo", "sum"], default="geo")
     ap.add_argument("--json", type=Path)
     a = ap.parse_args()
@@ -203,7 +204,7 @@ def main() -> None:
     real, pool = valid[:a.n], real_windows("TRAIN", 8)[:3000]
     excl = ("notes_per_bar", "symbol_entropy", "period_echo", "climax_pos", "distinct_motifs", "exact_share", "rhythm_share",
             "four_chord_share", "minor_share", "chord_changes", "parallel_rhythm", "parallel_contour", "distinct_chords")
-    fitness = build(a.rules, a.ngram, 0.5, a.lm, a.lm_w, a.disc or None, a.disc_w, a.desc, a.desc_w, a.amt_w, desc_exclude=excl, agg=a.agg)
+    fitness = build(a.rules, a.ngram, 0.5, a.lm, a.lm_w, a.disc or None, a.disc_w, a.desc, a.desc_w, a.amt_w, desc_exclude=excl, agg=a.agg, novel_only=a.novel_only)
     rep = audit(fitness, real, pool, a.seed)
     print(f"judge audit: {a.n} held-out real phrases, aggregation = {a.agg}, weights {rep['weights']}\n")
     print(render(rep))

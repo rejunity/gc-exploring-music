@@ -141,7 +141,7 @@ or from the Actions tab's "Run workflow" form.
   "continue" on, a run starts from the branch's previous archive, so each branch is a
   lineage. Genome: `form` (motifs + phrase plan, default) or `notes` (flat). Fitness:
   `corpus` (~1 s per iteration) or `critic` (small transformer critic from the
-  `critic-v1` release, ~7.5 s per iteration, max 800). Workflow: `.github/workflows/evolve.yml`.
+  `critic-v2` release, ~7.5 s per iteration, max 800). Workflow: `.github/workflows/evolve.yml`.
 - **Produce** explores what a branch already holds without evolving it: one large
   burst of variations (thousands of candidates), scored against **knobs** and a
   light quality floor, returned as a `.mid` + `.mp3` zip. Nothing is committed.

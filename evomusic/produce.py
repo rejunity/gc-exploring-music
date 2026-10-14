@@ -74,7 +74,7 @@ def quality_fitness(mode: str):
     ngram = ROOT / "data/processed/ngram_hooktheory.json"
     if mode == "critic":
         return build(0.5, ngram, 0.5, models / "critic_lm.pt", 1.0,
-                     [models / f"critic_disc_r{k}.pt" for k in (7, 8, 9)], 2.0,
+                     [models / f"critic_disc_r{k}.pt" for k in (8, 9, 10)], 2.0,
                      ROOT / "data/processed/desc_bands.json", 2.5, desc_exclude=excl)
     return build(0.5, ngram, 0.5, desc=ROOT / "data/processed/desc_bands.json", desc_w=2.5, desc_exclude=excl)
 
