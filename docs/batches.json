@@ -1016,6 +1016,134 @@
           "amt_gap": 0.303
         }
       ]
+    },
+    {
+      "id": "20261014-run3",
+      "title": "CI smoke test via issue",
+      "notes": "GitHub Actions run 3 on exp/smoke-test (corpus fitness, CPU). 'AMT gap' = large-critic check: NLL minus real pop of similar density (negative = more natural).",
+      "date": "2026-10-14",
+      "clips": [
+        {
+          "id": "evolved-01",
+          "label": "evolved",
+          "mid": "audio/20261014-run3/evolved-01.mid",
+          "source": "../run/star_4_4_0.985.mid",
+          "fitness": 0.985,
+          "chords": "vi vi7 I I V I IV I I I I I vi vi V V",
+          "desc": {
+            "density": 5.0,
+            "entropy": 3.88,
+            "range": 21,
+            "compression": 0.44
+          },
+          "amt_gap": 0.182
+        },
+        {
+          "id": "evolved-02",
+          "label": "evolved",
+          "mid": "audio/20261014-run3/evolved-02.mid",
+          "source": "../run/cell_0_1_0.947.mid",
+          "fitness": 0.947,
+          "chords": "II V I V V V V I bVI vi vi V V vi V V",
+          "desc": {
+            "density": 2.62,
+            "entropy": 3.08,
+            "range": 12,
+            "compression": 0.42
+          },
+          "amt_gap": 0.348
+        },
+        {
+          "id": "evolved-03",
+          "label": "evolved",
+          "mid": "audio/20261014-run3/evolved-03.mid",
+          "source": "../run/cell_1_1_0.918.mid",
+          "fitness": 0.918,
+          "chords": "iii V I V iii vi V vi iii V I I V V V vi",
+          "desc": {
+            "density": 3.25,
+            "entropy": 3.1,
+            "range": 16,
+            "compression": 0.4
+          },
+          "amt_gap": 0.099
+        },
+        {
+          "id": "evolved-04",
+          "label": "evolved",
+          "mid": "audio/20261014-run3/evolved-04.mid",
+          "source": "../run/cell_2_2_0.946.mid",
+          "fitness": 0.946,
+          "chords": "iii V I V iii vi V vi I I I I V V V vi",
+          "desc": {
+            "density": 3.5,
+            "entropy": 3.42,
+            "range": 16,
+            "compression": 0.44
+          },
+          "amt_gap": 0.246
+        },
+        {
+          "id": "evolved-05",
+          "label": "evolved",
+          "mid": "audio/20261014-run3/evolved-05.mid",
+          "source": "../run/cell_3_2_0.965.mid",
+          "fitness": 0.965,
+          "chords": "vi ii I I ii vi V vi I I I I V V V I",
+          "desc": {
+            "density": 4.88,
+            "entropy": 3.28,
+            "range": 17,
+            "compression": 0.37
+          },
+          "amt_gap": 0.012
+        },
+        {
+          "id": "evolved-06",
+          "label": "evolved",
+          "mid": "audio/20261014-run3/evolved-06.mid",
+          "source": "../run/cell_4_2_0.976.mid",
+          "fitness": 0.976,
+          "chords": "vi ii I I ii vi V vi I I I I vi vi V V",
+          "desc": {
+            "density": 5.0,
+            "entropy": 3.42,
+            "range": 17,
+            "compression": 0.36
+          },
+          "amt_gap": 0.098
+        },
+        {
+          "id": "evolved-07",
+          "label": "evolved",
+          "mid": "audio/20261014-run3/evolved-07.mid",
+          "source": "../run/cell_5_5_0.983.mid",
+          "fitness": 0.983,
+          "chords": "I V I I ii vi vi I I I I I I V V I",
+          "desc": {
+            "density": 6.38,
+            "entropy": 4.08,
+            "range": 20,
+            "compression": 0.48
+          },
+          "amt_gap": 0.215
+        },
+        {
+          "id": "evolved-08",
+          "label": "evolved",
+          "mid": "audio/20261014-run3/evolved-08.mid",
+          "source": "../run/cell_6_7_0.963.mid",
+          "fitness": 0.963,
+          "chords": "I ii I I ii vi vi I I I I vi V V V I",
+          "desc": {
+            "density": 6.62,
+            "entropy": 4.7,
+            "range": 20,
+            "compression": 0.54
+          },
+          "amt_gap": 0.252
+        }
+      ]
     }
   ]
 }
