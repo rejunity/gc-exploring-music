@@ -326,6 +326,34 @@ Reproduce: `evomusic.critic.train_lm` -> `evomusic.critic.adversarial` ->
 `scripts_final.sh` (grader) -> `evomusic.fitness.descriptors fit` ->
 `evomusic.mapelites --lm --lm-w 2 --disc r6 r7 r8 --desc ...` -> `evomusic.evaluate`.
 
+### 6.9 Human check, AMT grader, structure (2026-10-14)
+
+- **First human ratings (batch 003, rater rej, 20 pairs)**: real reference won
+  12 / 12 real-vs-evolved pairs. To a human ear the gap is obvious, while our
+  grader called it a tie. The critics are not yet human proxies.
+- **AMT as independent grader** (`critic/amt.py`, `evaluate --amt`): AMT finds
+  sparse music less likely even when real (real NLL 0.91 at <2.75 notes/bar vs
+  0.44 at >7), so evolved pieces are compared within density buckets.
+- **Blind spots found**: critics were near chance on a second phrase taken from
+  another song (AUC 0.58-0.61) and on thinned real melodies (0.57-0.62);
+  evolved pieces repeat as much as real ones but not phrase-parallel (bar k vs
+  k+4 same rhythm: real 0.41, evolved 0.17); GA genomes had fragmented rest
+  tokens the corpus never has (now `Genome.canonical`).
+- **Fixes**: `half_swap` and `thin` fake families, phrase-parallel descriptors,
+  round-9 critic and a fresh grader 2. Batch 004 report:
+
+| grader | AUC real vs evolved | agreement with human A/B (n=18) |
+|---|---|---|
+| GA-facing ensemble r7-r9 | 0.29 (fooled) | 0.56 |
+| grader 2 (fresh, structure fakes) | 0.65 | 0.50 |
+| critic LM | — | 0.61 |
+| AMT (Lakh, independent) | 0.80; density-matched gap +0.20 nats/token | 0.50 |
+
+Conclusion: stronger graders now see the gap humans hear; none predicts human
+choices yet (small n). Next: more human ratings on batch 004 as a calibration
+set; consider AMT as a fitness term (keeping grader 2 + humans as judges);
+a larger / bidirectional critic for phrase structure.
+
 ## 8. Evaluation: how do we know it is working?
 
 - Fitness curves per term over generations (should rise, and not saturate
