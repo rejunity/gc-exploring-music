@@ -9,6 +9,82 @@ standard `.mid` files.
 
 See [PLAN.md](PLAN.md) for the roadmap, datasets, and tooling.
 
+## How it works
+
+```mermaid
+flowchart TB
+    subgraph D["1 · Data"]
+        direction LR
+        RAW["10 public music corpora<br/>sha256-checked downloads"] --> HT["17k real pop phrases<br/>melody + chords in C major"]
+    end
+    subgraph L["2 · Judges: what real pop is like"]
+        direction TB
+        ST["Corpus statistics<br/>note and chord n-grams,<br/>typical ranges"]
+        PG["Phrase grammar<br/>how bars repeat<br/>and vary"]
+        CR["Critics<br/>language model +<br/>real-vs-fake<br/>discriminators"]
+        AMT["External critic<br/>Anticipatory Music<br/>Transformer"]
+        BS["Map of real pop<br/>128 regions"]
+    end
+    subgraph E["3 · Evolve with MAP-Elites"]
+        direction LR
+        R["Random pieces<br/>motifs + phrase plan<br/>+ chords"] --> V["Mutate and<br/>cross over"] --> F["Fitness<br/>all judges<br/>combined"] --> A["Archive<br/>best piece per region<br/>★ best overall"]
+        A -- "parents" --> V
+    end
+    subgraph O["4 · Listen, rate, steer"]
+        direction LR
+        W["Website<br/>listen in the browser,<br/>rate A/B"] -- "ratings" --> H["Human ranking<br/>which judge<br/>agrees with people?"]
+        W -- "buttons" --> GH["GitHub Actions<br/>Evolve: continue a branch's archive<br/>Produce: knob-steered variations"]
+    end
+    D --> L
+    L -- "scores and map" --> E
+    E -- "clips sampled like real pop" --> O
+```
+
+1. **Data.** `evomusic.data` downloads ten public music corpora and checks their
+   hashes. The main one is Hooktheory: 17k pop phrases with melody and chords,
+   transposed to C.
+2. **Judges.** From that corpus the system learns what real pop is like: note and
+   chord statistics (`fitness/ngram.py`, `fitness/descriptors.py`), a phrase grammar
+   of how bars repeat and vary (`form.py`), a transformer language model plus
+   real-vs-fake discriminators trained against the evolution itself (`critic/`), and
+   a map of 128 regions where real pop lives (`behaviour.py`). The Anticipatory Music
+   Transformer, trained by Stanford on Lakh MIDI, is an outside judge (`critic/amt.py`).
+3. **Evolution.** MAP-Elites (`mapelites.py`) starts from random pieces, mutates and
+   crosses them, scores every piece with all judges combined, and keeps the best
+   piece in each region of the map. The star marks the best overall.
+4. **Listening.** Clips are sampled in proportion to real pop and published on the
+   website, where people listen and rate pairs. Ratings arrive as GitHub issues and
+   show which judge agrees with human ears (`ratings.py`, `evaluate.py`). The site's
+   Evolve and Produce buttons run more evolution, or knob-steered variations, on
+   GitHub Actions.
+
+### How a piece is built
+
+```mermaid
+flowchart LR
+    subgraph M["Motifs: 1 bar each"]
+        direction TB
+        Ma["a · the hook"]
+        Mb["b · the answer"]
+        Mc["c · a contrast"]
+    end
+    subgraph P["Phrase plan: one entry per bar"]
+        direction LR
+        B1["bar 1<br/>a"] --> B2["bar 2<br/>b"] --> B3["bar 3<br/>a~<br/>a step higher"] --> B4["bar 4<br/>c"]
+        B4 --> B5["bar 5<br/>a=<br/>exact repeat"] --> B6["bar 6<br/>b"] --> B7["bar 7<br/>a'<br/>new ending"] --> B8["bar 8<br/>c*<br/>same rhythm,<br/>new notes"]
+    end
+    CH["Chords<br/>one per half bar"]
+    M --> P
+    P --> MEL["Melody"]
+    MEL --> MIDI["MIDI file<br/>lead piano + comping + bass"]
+    CH --> MIDI
+```
+
+A piece is a few one-bar motifs, a phrase plan saying which motif each bar uses and
+how it is transformed, and one chord per half bar (`form.py`). The plans and how often
+each occurs come from 17k real pop phrases. Evolution starts from random motifs and
+plans and keeps what the judges like.
+
 ## Quick start
 
 ```bash
