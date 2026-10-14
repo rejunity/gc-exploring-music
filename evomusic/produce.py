@@ -118,10 +118,14 @@ def produce(sources: list[FormGenome], n: int, strength: int, targets: dict[str,
     score = [(1 - w_knob) * q + w_knob * m for q, m in zip(quality, match)]
     log(f"scored in {time.time() - t0:.0f}s; quality median {np.median(quality):.3f}; knob match median {np.median(match):.3f}")
 
+    # quality floor: only the better half of the candidates may be chosen, however well they match the knobs
+    floor = float(np.median(quality))
+    eligible = [j for j in range(len(cands)) if quality[j] >= floor]
+    log(f"quality floor {floor:.3f}: {len(eligible)} eligible")
     # diverse selection (maximal marginal relevance in knob-percentile space)
     vec = np.array([[p[k] / 100 for k in KNOBS] for p in pcts])
     chosen: list[int] = []
-    order = np.argsort(score)[::-1][:max(50 * n, 400)]
+    order = sorted(eligible, key=lambda j: -score[j])[:max(50 * n, 400)]
     while len(chosen) < min(n, len(order)):
         best, best_v = None, -1e9
         for j in order:
