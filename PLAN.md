@@ -354,6 +354,32 @@ choices yet (small n). Next: more human ratings on batch 004 as a calibration
 set; consider AMT as a fitness term (keeping grader 2 + humans as judges);
 a larger / bidirectional critic for phrase structure.
 
+### 6.10 Listening feedback -> form (2026-10-14, batch 005)
+
+Renaldas: real pieces have a "memorable hook", "question-and-answer", "human
+sentence structure"; generated ones sound "random but formulaic", "one trick
+repeated with variation", lack "separation between rhythm and lead" and "a
+sense of direction". Measured on 19k phrase-aligned real windows vs batch 004:
+
+| feature | real pop | batch 004 | batch 005 |
+|---|---|---|---|
+| ends on tonic | 0.28 | 0.90 | — (rule removed) |
+| period echo (bars 1-2 vs 5-6 onset Jaccard, median) | 0.75 | low (exact 0.06) | 1.00 (overshoot) |
+| energy build (notes 2nd half / 1st, median) | 1.00 | 0.67 | 0.96 |
+| climax position (median, 0 = start) | 0.29 | ~0.2 | 0.14 |
+
+Changes: cadence rule removed; `fitness/descriptors.form` (climax_pos,
+density_ratio, period_echo) in the corpus bands; phrase-aware mutations
+(period, sentence, answer_vary, phrase_chords); `to_midi(style="pop")` lead /
+comping / bass; density-matched AMT fitness term (`critic/amt.AMTTerm`).
+
+Result: AMT density-matched gap +0.20 -> +0.06 and AMT-human agreement 0.67
+(n=18, now that clips are re-rendered in pop style), but independent grader 2
+separates more (AUC 0.65 -> 0.87): pleasing a Lakh-trained model pulls melodies
+toward Lakh habits (step fraction 0.48 vs Hooktheory 0.62). Judges disagree;
+human ratings on batch 005 decide. Next: soften period_echo (target the real
+median, not the band edge), push climax later.
+
 ## 8. Evaluation: how do we know it is working?
 
 - Fitness curves per term over generations (should rise, and not saturate

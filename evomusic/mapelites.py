@@ -38,7 +38,7 @@ def descriptors_fast(g: Genome) -> dict:
     return {"notes_per_bar": len(g.pitches()) / g.bars, "symbol_entropy": symbol_entropy(g)}
 
 
-def run(fitness, iters: int, batch: int, bins: int, seed: int, init: int, log=print, seeds: list[Genome] | None = None):
+def run(fitness, iters: int, batch: int, bins: int, seed: int, init: int, log=lambda *a: print(*a, flush=True), seeds: list[Genome] | None = None):
     rng = random.Random(seed)
     archive: dict[tuple, tuple[float, Genome]] = {}
 

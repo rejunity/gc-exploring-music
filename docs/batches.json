@@ -556,6 +556,210 @@
           }
         }
       ]
+    },
+    {
+      "id": "005-form-amt",
+      "title": "Form-aware, AMT-guided archive vs real pop (new lead / comping / bass rendering)",
+      "notes": "Response to listening feedback: tonic-cadence rule removed (it made every piece end on the tonic); targets for climax position, energy build and question/answer phrasing calibrated on real pop; phrase-aware mutations (period, sentence, varied answer); Anticipatory Music Transformer (Lakh MIDI) added to the fitness. New rendering separates lead piano from electric-piano comping on 2 and 4 and a finger bass. References are the batch-004 pop excerpts re-rendered the same way. 'Sounds real' = independent grader 2.",
+      "date": "2026-10-14",
+      "clips": [
+        {
+          "id": "evolved-01",
+          "label": "evolved",
+          "mid": "audio/005-form-amt/evolved-01.mid",
+          "source": "out/final_v4/star_2_3_0.965.mid",
+          "fitness": 0.965,
+          "chords": "vi vi vi vi vii\u00b0 bVII I I vi vi vi vi IV IV I vi",
+          "desc": {
+            "density": 3.75,
+            "entropy": 3.54,
+            "range": 23,
+            "compression": 0.36
+          },
+          "p_real": 0.625
+        },
+        {
+          "id": "evolved-02",
+          "label": "evolved",
+          "mid": "audio/005-form-amt/evolved-02.mid",
+          "source": "out/final_v4/cell_0_0_0.933.mid",
+          "fitness": 0.933,
+          "chords": "vi vi vi vi vii\u00b0 bVII I I vi vi vi vi I vi I vii\u00b0",
+          "desc": {
+            "density": 2.62,
+            "entropy": 2.77,
+            "range": 19,
+            "compression": 0.33
+          },
+          "p_real": 0.514
+        },
+        {
+          "id": "evolved-03",
+          "label": "evolved",
+          "mid": "audio/005-form-amt/evolved-03.mid",
+          "source": "out/final_v4/cell_1_0_0.936.mid",
+          "fitness": 0.936,
+          "chords": "vi vi vi vii\u00b0 vii\u00b0 bVII I IV vi vi vi vi vii\u00b0 IV I vii\u00b0",
+          "desc": {
+            "density": 3.25,
+            "entropy": 2.72,
+            "range": 14,
+            "compression": 0.35
+          },
+          "p_real": 0.652
+        },
+        {
+          "id": "evolved-04",
+          "label": "evolved",
+          "mid": "audio/005-form-amt/evolved-04.mid",
+          "source": "out/final_v4/cell_2_0_0.957.mid",
+          "fitness": 0.957,
+          "chords": "vi vi vi vii\u00b0 vii\u00b0 bVII I IV vi vi vi vi bVII IV I vii\u00b0",
+          "desc": {
+            "density": 3.88,
+            "entropy": 2.76,
+            "range": 14,
+            "compression": 0.35
+          },
+          "p_real": 0.708
+        },
+        {
+          "id": "evolved-05",
+          "label": "evolved",
+          "mid": "audio/005-form-amt/evolved-05.mid",
+          "source": "out/final_v4/cell_3_1_0.955.mid",
+          "fitness": 0.955,
+          "chords": "vi vi vi vi vii\u00b0 bVII I vii\u00b0 vi vi vi vi I IV I IV",
+          "desc": {
+            "density": 4.25,
+            "entropy": 2.94,
+            "range": 16,
+            "compression": 0.42
+          },
+          "p_real": 0.482
+        },
+        {
+          "id": "evolved-06",
+          "label": "evolved",
+          "mid": "audio/005-form-amt/evolved-06.mid",
+          "source": "out/final_v4/cell_4_3_0.949.mid",
+          "fitness": 0.949,
+          "chords": "ii7 ii7 vi vii\u00b0 vi vi ii7 ii7 ii7 vi vii\u00b0 ii7 vi vi vi vi7",
+          "desc": {
+            "density": 5.25,
+            "entropy": 3.63,
+            "range": 13,
+            "compression": 0.44
+          },
+          "p_real": 0.679
+        },
+        {
+          "id": "evolved-07",
+          "label": "evolved",
+          "mid": "audio/005-form-amt/evolved-07.mid",
+          "source": "out/final_v4/cell_5_5_0.887.mid",
+          "fitness": 0.887,
+          "chords": "vi vi vi vii\u00b0 vii\u00b0 vi vii\u00b0 vii\u00b0 vi vi vii\u00b0 vii\u00b0 vii\u00b0 vi vii\u00b0 vii\u00b0",
+          "desc": {
+            "density": 5.88,
+            "entropy": 4.29,
+            "range": 14,
+            "compression": 0.48
+          },
+          "p_real": 0.655
+        },
+        {
+          "id": "evolved-08",
+          "label": "evolved",
+          "mid": "audio/005-form-amt/evolved-08.mid",
+          "source": "out/final_v4/cell_6_6_0.777.mid",
+          "fitness": 0.777,
+          "chords": "V V V V V IV IV IV V V V V I IV I IV",
+          "desc": {
+            "density": 6.5,
+            "entropy": 4.44,
+            "range": 20,
+            "compression": 0.49
+          },
+          "p_real": 0.035
+        },
+        {
+          "id": "reference-01",
+          "label": "reference",
+          "mid": "audio/005-form-amt/reference-01.mid",
+          "source": "out/reference5/ref_abba_so-long.mid",
+          "fitness": null,
+          "chords": "I I bVII bVII IV IV IV IV I I bVII bVII IV IV IV IV",
+          "desc": {
+            "density": 5.0,
+            "entropy": 3.23,
+            "range": 4,
+            "compression": 0.4
+          },
+          "p_real": 0.787,
+          "credit": {
+            "text": "Abba \u2013 So Long (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/abba/so-long"
+          }
+        },
+        {
+          "id": "reference-02",
+          "label": "reference",
+          "mid": "audio/005-form-amt/reference-02.mid",
+          "source": "out/reference5/ref_adele_set-fire-to-the-rain.mid",
+          "fitness": null,
+          "chords": "ii ii vi vi I I V V ii ii vi vi I I V V",
+          "desc": {
+            "density": 4.5,
+            "entropy": 3.88,
+            "range": 11,
+            "compression": 0.42
+          },
+          "p_real": 0.804,
+          "credit": {
+            "text": "Adele \u2013 Set Fire To The Rain (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/adele/set-fire-to-the-rain"
+          }
+        },
+        {
+          "id": "reference-03",
+          "label": "reference",
+          "mid": "audio/005-form-amt/reference-03.mid",
+          "source": "out/reference5/ref_avicii_dear-boy.mid",
+          "fitness": null,
+          "chords": "IV V vi iii IV V iii vi IV V vi iii IV V I I",
+          "desc": {
+            "density": 5.38,
+            "entropy": 3.98,
+            "range": 23,
+            "compression": 0.47
+          },
+          "p_real": 0.779,
+          "credit": {
+            "text": "Avicii \u2013 Dear Boy (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/avicii/dear-boy"
+          }
+        },
+        {
+          "id": "reference-04",
+          "label": "reference",
+          "mid": "audio/005-form-amt/reference-04.mid",
+          "source": "out/reference5/ref_florence-and-the-machine_hunger.mid",
+          "fitness": null,
+          "chords": "I I IV IV vi vi V V V V IV IV vi vi V V",
+          "desc": {
+            "density": 5.62,
+            "entropy": 4.01,
+            "range": 27,
+            "compression": 0.51
+          },
+          "p_real": 0.746,
+          "credit": {
+            "text": "Florence And The Machine \u2013 Hunger (TheoryTab transcription via Sheet Sage / Hooktheory, CC BY-NC-SA 3.0; 8-bar excerpt rendered from annotations, transposed to C)",
+            "url": "https://www.hooktheory.com/theorytab/view/florence-and-the-machine/hunger"
+          }
+        }
+      ]
     }
   ]
 }
