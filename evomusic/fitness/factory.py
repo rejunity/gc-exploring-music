@@ -13,8 +13,12 @@ from evomusic.fitness.rules import default_rules
 
 def build(rules: float = 1.0, ngram: Path | None = None, ngram_w: float = 0.5,
           lm: Path | None = None, lm_w: float = 1.0, disc: Path | list[Path] | None = None, disc_w: float = 4.0,
-          desc: Path | None = None, desc_w: float = 2.0) -> Composite:
+          desc: Path | None = None, desc_w: float = 2.0, amt_w: float = 0.0) -> Composite:
     f = Composite()
+    if amt_w:
+        from evomusic.critic.amt import AMTGrader, AMTTerm
+        from evomusic.critic.train_disc import real_windows
+        f.add("amt", amt_w, AMTTerm(AMTGrader(), real_windows("VALID", 8)[:600]))
     if desc:
         from evomusic.fitness.descriptors import term
         f.add("descriptors", desc_w, term(desc))

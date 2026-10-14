@@ -44,6 +44,29 @@ def phrase_parallel(g: Genome) -> tuple[float, float]:
     return (sum(R[i] == R[i + h] for i in range(h)) / h, sum(C[i] == C[i + h] for i in range(h)) / h)
 
 
+def _onsets_jaccard(a: tuple, b: tuple) -> float:
+    sa, sb = set(a), set(b)
+    return len(sa & sb) / len(sa | sb) if sa | sb else 1.0
+
+
+def form(g: Genome) -> dict[str, float]:
+    """Phrase-level shape: where the melodic climax sits, whether energy builds or fades,
+    and how much the answer phrase (bars 5-6) echoes the question (bars 1-2)."""
+    bars = g.bar_genes()
+    h = len(bars) // 2
+    ps = g.pitches()
+    top = max(ps) if ps else 0
+    climax = next((i for i, b in enumerate(bars) if any(p == top for p, _ in b)), 0)
+    n1 = sum(p is not None for b in bars[:h] for p, _ in b)
+    n2 = sum(p is not None for b in bars[h:] for p, _ in b)
+    R = [_bar_rhythm(b) for b in bars]
+    return {
+        "climax_pos": climax / max(1, len(bars) - 1),
+        "density_ratio": (n2 + 1) / (n1 + 1),
+        "period_echo": (_onsets_jaccard(R[0], R[h]) + _onsets_jaccard(R[1], R[h + 1])) / 2,
+    }
+
+
 def cheap_descriptors(g: Genome) -> dict[str, float]:
     pr, pc = phrase_parallel(g)
     ps = g.pitches()
@@ -60,6 +83,7 @@ def cheap_descriptors(g: Genome) -> dict[str, float]:
         "mean_pitch": st.mean(ps) if ps else 0,
         "parallel_rhythm": pr,
         "parallel_contour": pc,
+        **form(g),
     }
 
 

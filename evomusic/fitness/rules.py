@@ -121,6 +121,6 @@ def default_rules() -> Composite:
             .add("range", 0.5, pitch_range)
             .add("rhythm", 1.0, rhythm)
             .add("rests", 0.5, rests)
-            .add("cadence", 0.3, cadence)      # windows are excerpts; real music scores 0.36 here
+            # cadence rule removed 2026-10-14: it forced tonic endings (evolved 0.90 vs real pop 0.28) = "formulaic"
             .add("repetition", 1.0, repetition)
             .add("harmony", 1.5, harmony))

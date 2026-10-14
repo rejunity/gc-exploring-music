@@ -45,7 +45,9 @@ def report(real: list[Genome], evolved: list[Genome], critics: dict[str, Critic]
     lm = next((c for c in critics.values() if c.lm), None)
     if lm:
         rows.append(_row("lm_nll", lm.nll(real), lm.nll(evolved)))
-    dr, de = [descriptors(g) for g in real], [descriptors(g) for g in evolved]
+    from evomusic.fitness.descriptors import form, phrase_parallel
+    ext = lambda g: descriptors(g) | form(g) | {"parallel_rhythm": phrase_parallel(g)[0]}
+    dr, de = [ext(g) for g in real], [ext(g) for g in evolved]
     for k in dr[0]:
         rows.append(_row(k, [d[k] for d in dr], [d[k] for d in de]))
     return rows

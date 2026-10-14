@@ -142,36 +142,64 @@ class Genome:
         return g
 
     # ---- phenotype --------------------------------------------------------
-    def to_midi(self, bpm: int = 110, transpose: int = 0, melody_program: int = 0,
-                chord_program: int = 0, melody_velocity: int = 88, chord_velocity: int = 56,
-                chord_octave: int = 4, bass: bool = True) -> mido.MidiFile:
+    def to_midi(self, bpm: int = 110, transpose: int = 0, style: str = "pop", melody_program: int = 0,
+                chord_program: int | None = None, bass_program: int = 33, melody_velocity: int = 96,
+                chord_velocity: int = 52, bass_velocity: int = 72, chord_octave: int = 4, bass: bool = True) -> mido.MidiFile:
+        """Render melody + accompaniment.
+
+        style="pop"  : lead piano on top; electric-piano chord stabs on beats 2 and 4 voiced
+                       below the melody; finger bass on the root on beats 1 and 3 (separate tracks,
+                       so "rhythm" and "lead" are audibly separated).
+        style="block": the original sustained block chords + bass in one piano track.
+        """
         mid = mido.MidiFile(ticks_per_beat=PPQ)
         meta = mido.MidiTrack(); mid.tracks.append(meta)
         meta.append(mido.MetaMessage("set_tempo", tempo=mido.bpm2tempo(bpm)))
         meta.append(mido.MetaMessage("time_signature", numerator=4, denominator=4))
         meta.append(mido.MetaMessage("key_signature", key="C"))
         meta.append(mido.MetaMessage("end_of_track", time=self.n_steps * STEP))
+        end = self.n_steps * STEP
 
-        # melody: absolute-time events then convert to deltas
-        events: list[tuple[int, int, mido.Message]] = []   # (tick, order, msg)
+        def note(events, start, stop, n, vel, ch):
+            events.append((start, 1, mido.Message("note_on", note=n + transpose, velocity=vel, channel=ch)))
+            events.append((stop - 1, 0, mido.Message("note_off", note=n + transpose, velocity=0, channel=ch)))
+
+        events: list = []
         for start, p, d in self.onsets():
-            if p is None:
-                continue
-            events.append((start * STEP, 1, mido.Message("note_on", note=p + transpose, velocity=melody_velocity, channel=0)))
-            events.append(((start + d) * STEP - 1, 0, mido.Message("note_off", note=p + transpose, velocity=0, channel=0)))
-        mid.tracks.append(_track("melody", melody_program, 0, events, self.n_steps * STEP))
+            if p is not None:
+                note(events, start * STEP, (start + d) * STEP, p, melody_velocity, 0)
+        mid.tracks.append(_track("melody", melody_program, 0, events, end))
 
-        events = []
+        if style == "block":
+            events = []
+            for i, ci in enumerate(self.chords):
+                ch = CHORDS[ci]
+                a, b = i * CHORD_STEPS * STEP, (i + 1) * CHORD_STEPS * STEP
+                notes = _voice(ch, chord_octave) + ([12 * (chord_octave - 2) + ch.root] if bass else [])
+                for n in notes:
+                    note(events, a, b, n, chord_velocity, 1)
+            mid.tracks.append(_track("chords", chord_program or 0, 1, events, end))
+            return mid
+
+        # style == "pop": comping below the lead + separate bass
+        lowest = min(self.pitches(), default=60)
+        events, bass_ev = [], []
         for i, ci in enumerate(self.chords):
             ch = CHORDS[ci]
-            start, end = i * CHORD_STEPS * STEP, (i + 1) * CHORD_STEPS * STEP
-            notes = _voice(ch, chord_octave)
+            slot = i * CHORD_STEPS * STEP
+            voicing = _voice(ch, chord_octave - 1)
+            while max(voicing) >= lowest - 2 and min(voicing) > 40:     # keep the comp under the melody
+                voicing = [n - 12 for n in voicing]
+            for beat in (1, 3) if CHORD_STEPS == 8 else (1,):             # beats 2 and 4 of the bar
+                if beat * 4 < CHORD_STEPS:
+                    a = slot + beat * 4 * STEP
+                    for n in voicing:
+                        note(events, a, a + 3 * STEP, n, chord_velocity, 1)
             if bass:
-                notes.append(12 * (chord_octave - 2) + ch.root)
-            for n in notes:
-                events.append((start, 1, mido.Message("note_on", note=n + transpose, velocity=chord_velocity, channel=1)))
-                events.append((end - 1, 0, mido.Message("note_off", note=n + transpose, velocity=0, channel=1)))
-        mid.tracks.append(_track("chords", chord_program, 1, events, self.n_steps * STEP))
+                note(bass_ev, slot, slot + CHORD_STEPS * STEP - STEP, 36 + ch.root if ch.root < 8 else 24 + ch.root, bass_velocity, 2)
+        mid.tracks.append(_track("chords", 4 if chord_program is None else chord_program, 1, events, end))
+        if bass:
+            mid.tracks.append(_track("bass", bass_program, 2, bass_ev, end))
         return mid
 
     def chord_names(self) -> str:

@@ -34,8 +34,9 @@ def mutate(g: Genome, rng: random.Random, rate: float = 1.0, lo: int = 45, hi: i
     n_ops = max(1, round(rng.expovariate(1 / rate)))
     for _ in range(n_ops):
         op = rng.choices(["pitch", "degree", "transpose_bar", "split", "merge", "rest", "repeat_bar",
-                          "retrograde", "invert", "chord", "chord_copy", "cadence", "octave"],
-                         weights=[4, 4, 1, 2, 2, 1, 1.5, 0.5, 0.5, 3, 1, 0.5, 0.5])[0]
+                          "retrograde", "invert", "chord", "chord_copy", "cadence", "octave",
+                          "period", "sentence", "answer_vary", "phrase_chords"],
+                         weights=[4, 4, 1, 2, 2, 1, 1.5, 0.5, 0.5, 3, 1, 0.3, 0.5, 0.6, 0.4, 0.8, 0.4])[0]
         bi = rng.randrange(len(bars)); bar = bars[bi]
         gi = rng.randrange(len(bar)); p, d = bar[gi]
         if op == "pitch" and p is not None:
@@ -73,6 +74,20 @@ def mutate(g: Genome, rng: random.Random, rate: float = 1.0, lo: int = 45, hi: i
             flat = [q for b in bars for q, _ in b if q is not None]
             if flat and lo <= min(flat) + k and max(flat) + k <= hi:
                 bars = [[(None if q is None else q + k, e) for q, e in b] for b in bars]
+        elif op == "period":                         # answer phrase restates the question: bars 1-2 -> 5-6
+            h = len(bars) // 2
+            bars[h], bars[h + 1] = list(bars[0]), list(bars[1])
+        elif op == "sentence":                       # basic idea + repetition, a step higher/lower: bar 1 -> bar 2
+            k = rng.choice([-1, 1, 2])
+            bars[1] = [(None if q is None else min(hi, max(lo, _scale_step(q, k))), e) for q, e in bars[0]]
+        elif op == "answer_vary":                    # keep the answer's rhythm, change its last notes (new ending)
+            h = len(bars) // 2
+            b = bars[h + 1]
+            bars[h + 1] = [(q if q is None or i < len(b) // 2 else min(hi, max(lo, _scale_step(q, rng.choice([-2, -1, 1, 2])))), e)
+                           for i, (q, e) in enumerate(b)]
+        elif op == "phrase_chords":                  # second phrase reuses the first phrase's progression
+            h = len(chords) // 2
+            chords[h:] = chords[:h]
         elif op == "cadence":
             chords[-2], chords[-1] = CHORDS.index(next(c for c in CHORDS if c.name == "V")), 0
     return Genome.from_bars(bars, chords)

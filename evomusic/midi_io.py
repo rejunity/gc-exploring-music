@@ -40,11 +40,12 @@ def genome_from_midi(path: Path, bars: int = 8) -> Genome:
             e += 1
         genes.append((p, e - s)); s = e
     chords = []
-    cn = _notes(tracks["chords"])
+    cn = _notes(tracks["chords"]) + (_notes(tracks["bass"]) if "bass" in tracks else [])
     for i in range(total // CHORD_STEPS):
-        t0 = i * CHORD_STEPS * scale
-        pcs = frozenset(n % 12 for s, e, n in cn if abs(s - t0) < scale)
-        bass = min((n for s, e, n in cn if abs(s - t0) < scale), default=0) % 12
+        t0, t1 = i * CHORD_STEPS * scale, (i + 1) * CHORD_STEPS * scale
+        inside = [n for s, e, n in cn if t0 - scale / 2 <= s < t1 - scale / 2]
+        pcs = frozenset(n % 12 for n in inside)
+        bass = min(inside, default=0) % 12
         idx = _BY_PCS.get(pcs, _BY_PCS.get(pcs - {bass} | {bass}, None))
         if idx is None:
             idx = next((k for k, c in enumerate(CHORDS) if set(c.pitch_classes()) <= pcs), 0)
