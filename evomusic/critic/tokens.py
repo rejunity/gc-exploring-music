@@ -19,6 +19,7 @@ PAD, BOS, EOS = TOK["<pad>"], TOK["<bos>"], TOK["<eos>"]
 
 
 def encode(g: Genome) -> list[int]:
+    g = g.canonical()
     out = [BOS]
     starts = {}
     for s, p, d in g.onsets():

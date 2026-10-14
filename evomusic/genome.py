@@ -100,6 +100,20 @@ class Genome:
         g.check()
         return g
 
+    def canonical(self) -> "Genome":
+        """Merge consecutive rests within a bar (how the corpus encodes silence). Inaudible
+        difference, but fragmented rest tokens would otherwise be a giveaway to the critic."""
+        bars = []
+        for b in self.bar_genes():
+            nb = []
+            for p, d in b:
+                if p is None and nb and nb[-1][0] is None:
+                    nb[-1] = (None, nb[-1][1] + d)
+                else:
+                    nb.append((p, d))
+            bars.append(nb)
+        return Genome.from_bars(bars, self.chords, dict(self.meta))
+
     def copy(self) -> "Genome":
         return Genome(list(self.melody), list(self.chords), self.bars, dict(self.meta))
 
