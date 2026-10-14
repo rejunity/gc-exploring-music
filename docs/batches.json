@@ -1273,6 +1273,143 @@
         }
       ],
       "download": "https://github.com/rejunity/gc-exploring-music/actions/runs/38589943345/artifacts/11907046503"
+    },
+    {
+      "id": "20261014-run8",
+      "title": "Form genome CI test",
+      "notes": "GitHub Actions run 8 on exp/smoke-test (corpus fitness, form genome, real-pop-shaped archive, CPU). Clips sampled in proportion to how common their region is in real pop. 'AMT gap' = large-critic check: NLL minus real pop of similar density (negative = more natural).",
+      "date": "2026-10-14",
+      "clips": [
+        {
+          "id": "evolved-01",
+          "label": "evolved",
+          "mid": "audio/20261014-run8/evolved-01.mid",
+          "source": "../run/star_027_0.994.mid",
+          "fitness": 0.994,
+          "chords": "vi V IV I vi ii ii IV vi V V I vi ii ii IV",
+          "desc": {
+            "density": 4.12,
+            "entropy": 4.06,
+            "range": 22,
+            "compression": 0.49
+          },
+          "amt_gap": 0.174,
+          "plan": "a a' b c a= a' b= d"
+        },
+        {
+          "id": "evolved-02",
+          "label": "evolved",
+          "mid": "audio/20261014-run8/evolved-02.mid",
+          "source": "../run/cell_042_0.971.mid",
+          "fitness": 0.971,
+          "chords": "vi ii vii\u00b0 III vi vi vi V iii ii ii V vi vi vi V",
+          "desc": {
+            "density": 7.38,
+            "entropy": 3.77,
+            "range": 23,
+            "compression": 0.49
+          },
+          "amt_gap": 0.148,
+          "plan": "a a' a= a* a= a= a= a~"
+        },
+        {
+          "id": "evolved-03",
+          "label": "evolved",
+          "mid": "audio/20261014-run8/evolved-03.mid",
+          "source": "../run/cell_016_0.968.mid",
+          "fitness": 0.968,
+          "chords": "I vii\u00b0 I ii V I IV V I IV I iii ii ii I iii",
+          "desc": {
+            "density": 5.88,
+            "entropy": 4.08,
+            "range": 20,
+            "compression": 0.5
+          },
+          "amt_gap": 0.302,
+          "plan": "a b c a= d bf c= e"
+        },
+        {
+          "id": "evolved-04",
+          "label": "evolved",
+          "mid": "audio/20261014-run8/evolved-04.mid",
+          "source": "../run/cell_080_0.982.mid",
+          "fitness": 0.982,
+          "chords": "vi vi vii\u00b0 III vi vi vi II iii iii iii iii iii vi IV V",
+          "desc": {
+            "density": 5.0,
+            "entropy": 4.06,
+            "range": 16,
+            "compression": 0.49
+          },
+          "amt_gap": 0.309,
+          "plan": "a b a= a* af b' c b'"
+        },
+        {
+          "id": "evolved-05",
+          "label": "evolved",
+          "mid": "audio/20261014-run8/evolved-05.mid",
+          "source": "../run/cell_007_0.916.mid",
+          "fitness": 0.916,
+          "chords": "IV I I I I I I I iii iii iii iii iii vi IV IV",
+          "desc": {
+            "density": 4.5,
+            "entropy": 4.11,
+            "range": 27,
+            "compression": 0.52
+          },
+          "amt_gap": 0.17,
+          "plan": "a a= b a= c a* d e"
+        },
+        {
+          "id": "evolved-06",
+          "label": "evolved",
+          "mid": "audio/20261014-run8/evolved-06.mid",
+          "source": "../run/cell_068_0.897.mid",
+          "fitness": 0.897,
+          "chords": "IV I I I I I I iii IV I I I I I I Imaj7",
+          "desc": {
+            "density": 5.38,
+            "entropy": 3.01,
+            "range": 19,
+            "compression": 0.39
+          },
+          "amt_gap": 0.111,
+          "plan": "a a= b c c= c* c= d"
+        },
+        {
+          "id": "evolved-07",
+          "label": "evolved",
+          "mid": "audio/20261014-run8/evolved-07.mid",
+          "source": "../run/cell_048_0.932.mid",
+          "fitness": 0.932,
+          "chords": "ii ii vii\u00b0 V vi vi vi V iii iii iii iii iii vi IV V",
+          "desc": {
+            "density": 5.0,
+            "entropy": 3.65,
+            "range": 18,
+            "compression": 0.48
+          },
+          "amt_gap": 0.177,
+          "plan": "a b a' b' a= b= a' b'"
+        },
+        {
+          "id": "evolved-08",
+          "label": "evolved",
+          "mid": "audio/20261014-run8/evolved-08.mid",
+          "source": "../run/cell_006_0.977.mid",
+          "fitness": 0.977,
+          "chords": "vi V IV I vi ii IV IV iii I iii iii iii vi IV IV",
+          "desc": {
+            "density": 5.0,
+            "entropy": 3.97,
+            "range": 22,
+            "compression": 0.49
+          },
+          "amt_gap": 0.324,
+          "plan": "a a= a= b c d e f"
+        }
+      ],
+      "download": "https://github.com/rejunity/gc-exploring-music/actions/runs/38593366699/artifacts/11908855771"
     }
   ]
 }
