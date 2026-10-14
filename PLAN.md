@@ -529,8 +529,21 @@ masked AMT showed why: real phrases with 3+ late repeats score 0.45 vs 0.73 for
 the rest, because only their early, context-poor bars get scored. The LM's
 masking has no such bias (0.64 / 0.66 / 0.71). Decision: mask the LM only
 (`--novel-only`), keep the AMT unmasked (`--amt-novel-only` exists, off);
-**run v9** with that combination overnight; batch 007 (v7) stays unless v9 is
-clearly better on the same table.
+**run v9** (LM masked, AMT unmasked): not better either. Grader 3 AUC 0.79, AMT
+gap +0.01, new material 42 %, new endings 24 %: with the LM masked and the AMT
+not, the AMT's reward for mild duplication (audit: 3 duplicated bars 0.75 vs
+0.65) decides the within-band direction, and the fitness fails the audit at the
+combined level (0.618 vs 0.595).
+
+**Position-aware AMT masking** (`AMTTerm` mode "novel_pos"): each non-repeated
+bar's NLL is compared with the real-pop median for that bar position (bar 1 is
+always expensive: no context), then density-corrected. Audit, LM masked + AMT
+position-masked: 3 duplicated bars 0.70 vs real 0.73 on the AMT, combined 0.60
+vs 0.63 (caught); natural repetition flat (AMT 0.70 / 0.77 / 0.70, combined
+0.64 / 0.64 / 0.58); loops and copies still caught; only the weak single
+judges (rules, chord-tone unigram) prefer 3 duplicated bars. First fitness that
+passes the audit at the combined level on every corruption. **Run v10** uses it;
+compared with v7 (batch 007) on the same table before anything is published.
 
 ## 8. Evaluation: how do we know it is working?
 
