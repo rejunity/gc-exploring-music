@@ -542,8 +542,32 @@ position-masked: 3 duplicated bars 0.70 vs real 0.73 on the AMT, combined 0.60
 vs 0.63 (caught); natural repetition flat (AMT 0.70 / 0.77 / 0.70, combined
 0.64 / 0.64 / 0.58); loops and copies still caught; only the weak single
 judges (rules, chord-tone unigram) prefer 3 duplicated bars. First fitness that
-passes the audit at the combined level on every corruption. **Run v10** uses it;
-compared with v7 (batch 007) on the same table before anything is published.
+passes the audit at the combined level on every corruption. **Run v10** used it.
+
+**Comparison on what the site would publish** (200 clips sampled in proportion
+to real pop per run; grader 3 and AMT are independent of all four fitnesses):
+
+| run | new | exact | sequence | new ending | same rhythm | grader 3 median (real 0.74) | AUC | AMT gap |
+|---|---|---|---|---|---|---|---|---|
+| v7, batch 007 (critic v2, no masking) | 51 % | 20 % | 7 % | 17 % | 6 % | **0.71** | **0.60** | **+0.01** |
+| v8 (LM + naive AMT mask) | 52 % | 13 % | 4 % | 17 % | 11 % | 0.60 | 0.72 | +0.06 |
+| v9 (LM mask only) | 46 % | 16 % | 2 % | 25 % | 11 % | 0.55 | 0.76 | +0.02 |
+| v10 (LM + position-aware AMT mask, passes audit) | 51 % | 13 % | 8 % | 11 % | 16 % | 0.55 | 0.70 | +0.09 |
+| real pop | 57 % | 15 % | 3 % | 13 % | 10 % | 0.74 | 0.5 | 0 |
+
+Decision: **batch 007 stays; v8-v10 are not published.** Closing the mild-
+duplication shortcut in the likelihood judges did not improve the output: the
+GA moved the surplus between kinds of repetition (exact -> varied endings ->
+same-rhythm / sequences) while new material stayed at 46-52 % in every variant,
+and both independent judges rate the masked runs further from real. So the
+remaining "new material" gap (51 vs 57 %) is not driven by the likelihood
+judges. Candidates: the GA-facing discriminators (trained on form-genome
+negatives of this very style; AUC vs held-out GA runs 0.75), the genome's cost
+structure (a variation of an in-band bar is in-band, a new bar is a lottery),
+or the within-cell drift. The masking flags stay available (`--novel-only`,
+`--amt-novel-only`) and the audit remains the gate for any critic change.
+Human ratings on batch 007 are the next signal: do exact repeats read as hooks
+(fine) and same-rhythm / sequence variations as "one trick" (not fine)?
 
 ## 8. Evaluation: how do we know it is working?
 
